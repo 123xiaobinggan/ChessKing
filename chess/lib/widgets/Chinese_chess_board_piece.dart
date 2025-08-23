@@ -1,0 +1,333 @@
+import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'Chinese_chess_piece_painter.dart';
+import 'Chinese_chess_board_painter.dart';
+import '/pages/ChineseChessBoard/Chinese_chess_board_controller.dart';
+import '/widgets/build_select_button.dart';
+import '/widgets/drum.dart';
+import '/widgets/build_matching_word.dart';
+import 'send_king_alert.dart';
+import 'check_alert.dart';
+import 'check_mate_alert.dart';
+import 'game_result.dart';
+
+class ChineseChessBoardWithPieces extends StatelessWidget {
+  final ChineseChessBoardController controller = Get.find();
+
+  ChineseChessBoardWithPieces({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (_, constraints) {
+        final boardWidth = constraints.maxWidth;
+        final boardHeight = boardWidth * 10 / 9;
+
+        return GestureDetector(
+          onTapDown: (details) {
+            final tapPos = details.localPosition;
+
+            // 判断点击是否是可移动点
+            final isValid = controller.availableMove.any((p) {
+              final targetLeft = p.col * boardWidth * 0.88 / 8 + 3 + 20 / 1.414;
+              final targetTop = p.row * boardHeight * 0.90 / 9 + 1 + 20 / 1.414;
+              final targetCenter = Offset(targetLeft, targetTop);
+
+              return (tapPos - targetCenter).distance <= 15; // 容差范围
+            });
+
+            if (isValid) {
+              // 找到目标点并移动
+              final moveTarget = controller.availableMove.firstWhere((p) {
+                final targetLeft =
+                    p.col * boardWidth * 0.88 / 8 + 3 + 20 / 1.414;
+                final targetTop =
+                    p.row * boardHeight * 0.90 / 9 + 1 + 20 / 1.414;
+                final targetCenter = Offset(targetLeft, targetTop);
+                return (tapPos - targetCenter).distance <= 15;
+              });
+              controller.moveSelectedPiece(moveTarget.row, moveTarget.col);
+            } else {
+              // 非可行位置 → 飞过去再飞回来
+              // controller.flyToTemp(tapPos, boardWidth, boardHeight);
+            }
+          },
+          child: SizedBox(
+            width: boardWidth,
+            height: boardHeight,
+            child: Stack(
+              children: [
+                // 棋盘
+                CustomPaint(
+                  // 棋盘
+                  size: Size(boardWidth, boardHeight),
+                  painter: ChineseChessPainter(),
+                ),
+
+                // 状态
+                Obx(() {
+                  switch (controller.stage.value) {
+                    case GameStage.idle:
+                      return Center(
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            minimumSize: Size(150, 50),
+                            textStyle: TextStyle(fontSize: 20),
+                          ),
+                          onPressed: controller.startSelect,
+                          child: Text("开始对弈"),
+                        ),
+                      );
+
+                    case GameStage.selecting:
+                      return Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.max,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            buildSelectButton("  5 分钟场", 5),
+                            buildSelectButton("10 分钟场", 10),
+                            buildSelectButton("15 分钟场", 15),
+                            buildSelectButton("20 分钟场", 20),
+                          ],
+                        ),
+                      );
+
+                    case GameStage.matching:
+                      return Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const DrumAnimation(),
+                            const SizedBox(height: 20),
+                            MatchingText(),
+                          ],
+                        ),
+                      );
+
+                    case GameStage.playing:
+                      return Stack(
+                        children: [
+                          // 棋子
+                          ...controller.pieces.map((p) {
+                            final double targetLeft =
+                                p.pos.col * boardWidth * 0.88 / 8 + 3;
+                            final double targetTop =
+                                p.pos.row * boardHeight * 0.90 / 9 + 1;
+
+                            return AnimatedPositioned(
+                              key: ValueKey(p),
+                              duration: const Duration(milliseconds: 300),
+                              curve: Curves.easeInOut,
+                              left: targetLeft,
+                              top: targetTop,
+                              child: ChineseChessPiece(
+                                type: p.type,
+                                isRed: p.isRed,
+                                row: p.pos.row,
+                                col: p.pos.col,
+                                isSelected: controller.selectedPiece.value == p,
+                                isPlaced: controller.placedPiece.value == p,
+                                onTap: () {
+                                  controller.selectPiece(p);
+                                },
+                              ),
+                            );
+                          }),
+
+                          // 棋子路径
+                          Positioned(
+                            left:
+                                controller.sourcePoint.value.col *
+                                    boardWidth *
+                                    0.88 /
+                                    8 +
+                                3 +
+                                20 / 1.414,
+                            top:
+                                controller.sourcePoint.value.row *
+                                    boardHeight *
+                                    0.90 /
+                                    9 +
+                                1 +
+                                20 / 1.414,
+                            child: Container(
+                              width: 12,
+                              height: 12,
+                              decoration: BoxDecoration(
+                                color: Colors.transparent,
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: Colors.white,
+                                  width: 2,
+                                ),
+                              ),
+                            ),
+                          ),
+
+                          // 绿色可移动点
+                          ...controller.availableMove.map(
+                            (p) => Positioned(
+                              left:
+                                  p.col * boardWidth * 0.88 / 8 +
+                                  3 +
+                                  20 / 1.414,
+                              top:
+                                  p.row * boardHeight * 0.90 / 9 +
+                                  1 +
+                                  20 / 1.414,
+                              child: GestureDetector(
+                                onTap: () {
+                                  controller.moveSelectedPiece(p.row, p.col);
+                                },
+                                child: Container(
+                                  width: 12,
+                                  height: 12,
+                                  decoration: BoxDecoration(
+                                    color: Colors.green,
+                                    shape: BoxShape.circle,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      );
+
+                    case GameStage.over:
+                      return Stack(
+                        children: [
+                          // 棋子
+                          ...controller.pieces.map((p) {
+                            final double targetLeft =
+                                p.pos.col * boardWidth * 0.88 / 8 + 3;
+                            final double targetTop =
+                                p.pos.row * boardHeight * 0.90 / 9 + 1;
+
+                            return AnimatedPositioned(
+                              key: ValueKey(p),
+                              duration: const Duration(milliseconds: 300),
+                              curve: Curves.easeInOut,
+                              left: targetLeft,
+                              top: targetTop,
+                              child: ChineseChessPiece(
+                                type: p.type,
+                                isRed: p.isRed,
+                                row: p.pos.row,
+                                col: p.pos.col,
+                                isSelected: controller.selectedPiece.value == p,
+                                isPlaced: controller.placedPiece.value == p,
+                                onTap: () {
+                                  controller.selectPiece(p);
+                                },
+                              ),
+                            );
+                          }),
+
+                          // 棋子路径
+                          Positioned(
+                            left:
+                                controller.sourcePoint.value.col *
+                                    boardWidth *
+                                    0.88 /
+                                    8 +
+                                3 +
+                                20 / 1.414,
+                            top:
+                                controller.sourcePoint.value.row *
+                                    boardHeight *
+                                    0.90 /
+                                    9 +
+                                1 +
+                                20 / 1.414,
+                            child: Container(
+                              width: 12,
+                              height: 12,
+                              decoration: BoxDecoration(
+                                color: Colors.transparent,
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: Colors.white,
+                                  width: 2,
+                                ),
+                              ),
+                            ),
+                          ),
+
+                          // 绿色可移动点
+                          ...controller.availableMove.map(
+                            (p) => Positioned(
+                              left:
+                                  p.col * boardWidth * 0.88 / 8 +
+                                  3 +
+                                  20 / 1.414,
+                              top:
+                                  p.row * boardHeight * 0.90 / 9 +
+                                  1 +
+                                  20 / 1.414,
+                              child: GestureDetector(
+                                onTap: () {
+                                  controller.moveSelectedPiece(p.row, p.col);
+                                },
+                                child: Container(
+                                  width: 12,
+                                  height: 12,
+                                  decoration: BoxDecoration(
+                                    color: Colors.green,
+                                    shape: BoxShape.circle,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+
+                          GameResultOverlay(
+                            result: controller.result,
+                            me: controller.playInfo['me'],
+                            opponent: controller.playInfo['opponent'],
+                            type: controller.type.contains('ChineseChess')?'ChineseChess':'',
+                            onRestart: () =>
+                                controller.stage.value = GameStage.selecting,
+                          ),
+                        ],
+                      );
+                  }
+                }),
+
+                // 将军提示
+                Positioned.fill(
+                  child: CheckAlertOverlay(
+                    isInCheckNotifier: controller.isInCheckNotifier,
+                  ),
+                ),
+
+                // 送将提示
+                Obx(
+                  () => controller.sendKingAlert.value
+                      ? CheckWarning(
+                          onClose: () => controller.sendKingAlert.value = false,
+                        )
+                      : SizedBox.shrink(),
+                ),
+
+                // 绝杀提示
+                Positioned.fill(
+                  child: CheckmateAlert(
+                    isInCheckMateNotifier: controller.isInCheckMateNotifier,
+                    onClose: () => controller.overGame(
+                      controller.playInfo['opponent']['myTurn'].value == true
+                          ? '胜'
+                          : '败',
+                      'checkmate',
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+}

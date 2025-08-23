@@ -1,0 +1,115 @@
+{
+  "envId": "chess-king-1gvhs90sfc60354d", 
+  "functions": [
+    {
+      "name": "Login_Register",
+      "config": {
+        "timeout": 30, 
+        "runtime": "Nodejs18.15", 
+        "memorySize": 256 
+      },
+      "entry": "index.js", 
+      "path": "/Login_Register" 
+    },
+    {
+      "name": "GetFriends",
+      "config": {
+        "timeout": 30, 
+        "runtime": "Nodejs18.15", 
+        "memorySize": 256 
+      },
+      "entry": "index.js", 
+      "path": "/GetFriends" 
+    },
+    {
+      "name": "Edit",
+      "config": {
+        "timeout": 30, 
+        "runtime": "Nodejs18.15", 
+        "memorySize": 256 
+      },
+      "entry": "index.js", 
+      "path": "/Edit" 
+    },
+    {
+      "name": "GetSignature",
+      "config": {
+        "timeout": 30, 
+        "runtime": "Nodejs18.15", 
+        "memorySize": 256 
+      },
+      "entry": "index.js", 
+      "path": "/GetSignature" 
+    },
+    {
+      "name": "MatchPlayer",
+      "config": {
+        "timeout": 30, 
+        "runtime": "Nodejs18.15", 
+        "memorySize": 256 
+      },
+      "entry": "index.js", 
+      "path": "/MatchPlayer" 
+    },
+    {
+      "name": "CancelMatch",
+      "config": {
+        "timeout": 30, 
+        "runtime": "Nodejs18.15", 
+        "memorySize": 256 
+      },
+      "entry": "index.js", 
+      "path": "/CancelMatch" 
+    },
+    {
+      "name": "Move",
+      "config": {
+        "timeout": 30, 
+        "runtime": "Nodejs18.15", 
+        "memorySize": 256 
+      },
+      "entry": "index.js", 
+      "path": "/Move" 
+    },
+    {
+      "name": "GetOpponentMove",
+      "config": {
+        "timeout": 30, 
+        "runtime": "Nodejs18.15", 
+        "memorySize": 256 
+      },
+      "entry": "index.js", 
+      "path": "/GetOpponentMove" 
+    },
+    {
+      "name": "WritingResult",
+      "config": {
+        "timeout": 30, 
+        "runtime": "Nodejs18.15", 
+        "memorySize": 256 
+      },
+      "entry": "index.js", 
+      "path": "/WritingResult" 
+    },
+    {
+      "name": "UpdateLevel",
+      "config": {
+        "timeout": 30, 
+        "runtime": "Nodejs18.15", 
+        "memorySize": 256 
+      },
+      "entry": "index.js", 
+      "path": "/UpdateLevel" 
+    },
+    {
+      "name": "GetVersion",
+      "config": {
+        "timeout": 30, 
+        "runtime": "Nodejs18.15", 
+        "memorySize": 256 
+      },
+      "entry": "index.js", 
+      "path": "/GetVersion" 
+    }
+  ]
+}

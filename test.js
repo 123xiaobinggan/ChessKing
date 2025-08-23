@@ -1,0 +1,65 @@
+import axios from "axios";
+
+// MatchPlayer
+// const url = "https://chess-king-1gvhs90sfc60354d-1358387153.ap-shanghai.app.tcloudbase.com/MatchPlayer"
+
+//Move
+const url = "https://chess-king-1gvhs90sfc60354d-1358387153.ap-shanghai.app.tcloudbase.com/Move"
+
+//GetOpponentMove
+// const url = "https://chess-king-1gvhs90sfc60354d-1358387153.ap-shanghai.app.tcloudbase.com/GetOpponentMove"
+
+const params = {
+    // player: {
+    //     accountId: 'binggangan',
+    //     username: 'binggangan',
+    //     avatar: 'https://binggan-1358387153.cos.ap-guangzhou.myqcloud.com/User/xiaobinggan.jpg?v=1754218446732',
+    //     level: '1-1',
+    //     isRed: false,
+    //     timeLeft: 900
+    // },
+    // type: 'ChineseChessMatch'
+    roomId: 'f0a4d85168a6a6ed02c77fb87fec27ac',
+    // moves_length: 1,
+    step:{
+        accountId: 'binggangan',
+        type: '車',
+        from: {
+            row: 0,
+            col: 0
+        },
+        to:{
+            row: 1,
+            col: 0
+        }
+    }
+    // undo
+    // step:{
+    //     account_id: 'binggangan',
+    //     type: '请求悔棋',
+    //     from: {
+    //         row: -1,
+    //         col: -1
+    //     },
+    //     to:{
+    //         row: -1,
+    //         col: -1
+    //     }
+    // }
+}
+
+async function main() {
+    try {
+        const res = await axios.post(url, params, {
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        }
+        )
+        console.log(res.data)
+    } catch (err) {
+        console.log(err)
+    }
+}
+
+main();
