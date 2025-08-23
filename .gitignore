@@ -1,1 +1,7 @@
 node_modules
+test.js
+cloudbaserc.json
+package-lock.json
+package.json
+.idea
+.vscode
