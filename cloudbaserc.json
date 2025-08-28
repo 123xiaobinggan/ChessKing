@@ -110,6 +110,66 @@
       },
       "entry": "index.js", 
       "path": "/GetVersion" 
+    },
+    {
+      "name": "RejectFriends",
+      "config": {
+        "timeout": 30, 
+        "runtime": "Nodejs18.15", 
+        "memorySize": 256 
+      },
+      "entry": "index.js", 
+      "path": "/RejectFriends" 
+    },
+    {
+      "name": "DeleteFriends",
+      "config": {
+        "timeout": 30, 
+        "runtime": "Nodejs18.15", 
+        "memorySize": 256 
+      },
+      "entry": "index.js", 
+      "path": "/DeleteFriends" 
+    },
+    {
+      "name": "AcceptFriends",
+      "config": {
+        "timeout": 30, 
+        "runtime": "Nodejs18.15", 
+        "memorySize": 256 
+      },
+      "entry": "index.js", 
+      "path": "/AcceptFriends" 
+    },
+    {
+      "name": "RequestFriends",
+      "config": {
+        "timeout": 30, 
+        "runtime": "Nodejs18.15", 
+        "memorySize": 256 
+      },
+      "entry": "index.js", 
+      "path": "/RequestFriends" 
+    },
+    {
+      "name": "SearchFriends",
+      "config": {
+        "timeout": 30, 
+        "runtime": "Nodejs18.15", 
+        "memorySize": 256 
+      },
+      "entry": "index.js", 
+      "path": "/SearchFriends" 
+    },
+    {
+      "name": "SendInvitation",
+      "config": {
+        "timeout": 30, 
+        "runtime": "Nodejs18.15", 
+        "memorySize": 256 
+      },
+      "entry": "index.js", 
+      "path": "/SendInvitation" 
     }
   ]
 }

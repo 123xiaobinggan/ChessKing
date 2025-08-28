@@ -6,7 +6,7 @@ class ChineseChessPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final double backgroundHeight = size.height * 1.0;
     final double boardWidth = size.width * 0.88; // 90% 居中
-    final double boardHeight = size.height * 0.90;
+    final double boardHeight = size.height * 0.889;
     final double offsetX = (size.width - boardWidth) / 2;
     final double offsetY = (backgroundHeight - boardHeight) / 2;
     final double cellWidth = boardWidth / 8;

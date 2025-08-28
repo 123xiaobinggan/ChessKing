@@ -7,6 +7,7 @@ const app = tcb.init({
 exports.main = async (event, context) => {
     const db = app.database()
     const { roomId, type, result } = JSON.parse(event.body)
+    console.log('event', event)
 
     try {
         const roomCollection = db.collection('Room')
@@ -24,15 +25,15 @@ exports.main = async (event, context) => {
         const player2 = roomRes.data[0].player2
 
         if (type.includes('Match')) {
-            tt = type.replace('Macth','');
+            const Type = type.replace('Match', '');
             await app.callFunction({
                 name: 'UpdateLevel',
-                data: { accountId: player1.accountId, tt, win: result.winner == player1.accountId ? 1 : result.winner == player2.accountId ? -1 : 0 }
+                data: { accountId: player1.accountId, Type, win: result.winner == player1.accountId ? 1 : result.winner == player2.accountId ? -1 : 0 }
             })
 
             await app.callFunction({
                 name: 'UpdateLevel',
-                data: { accountId: player2.accountId, tt, win: result.winner == player2.accountId ? 1 : result.winner == player1.accountId ? -1 : 0 }
+                data: { accountId: player2.accountId, Type, win: result.winner == player2.accountId ? 1 : result.winner == player1.accountId ? -1 : 0 }
             })
         }
 

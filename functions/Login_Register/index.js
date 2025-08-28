@@ -6,7 +6,7 @@ const app = tcb.init({
 
 exports.main = async (event, context) => {
     const ip = event.headers['x-real-ip'] || event.headers['x-forwarded-for'];
-    const { accountId, username, password, login } = JSON.parse(event.body);
+    const { accountId, username, password, login, rid } = JSON.parse(event.body);
     console.log('参数值',accountId, username, password, login);
     console.log('event',typeof event.body)
     const db = app.database()
@@ -17,6 +17,9 @@ exports.main = async (event, context) => {
             if (user.data[0].password !== password) {
                 return { code: 1, msg: '账号或密码错误' }
             }
+            await userCollection.doc(user.data[0]._id).update({
+                rid: rid
+            })
             user.data[0]['ip'] = ip;
             delete user.data[0].password;
             return { code: 0, msg: '登录成功', data: user.data[0] }
@@ -41,6 +44,8 @@ exports.main = async (event, context) => {
                 activity: 0,
                 coupon: 0,
                 friend: [],
+                requestFriends: [],
+                rid: rid,
                 ChineseChess: {
                     level: '1-1',
                     total: 0,

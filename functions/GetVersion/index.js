@@ -15,8 +15,9 @@ exports.main = async (event, context) => {
            .limit(1)
            .get()
 
+        console.log('res',res.data[0])
         if (res.data.length > 0) {
-            return {code:0, version:res.data[0]['version']}
+            return {code:0, data:res.data[0]}
         } else {
             return { message: '未找到相关数据' }
         }

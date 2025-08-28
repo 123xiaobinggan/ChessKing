@@ -22,6 +22,7 @@ class RegisterController extends GetxController {
       'username': username, // 用户名
       'password': password, // 密码
       'login': false, // 注册标志
+      'rid': GlobalData.rid, // 设备ID
     };
 
     Get.dialog(
@@ -39,6 +40,7 @@ class RegisterController extends GetxController {
         'Response: ${response.data['code']}, ${response.data['code'] == 0}', // 打印响应结果
       );
       if (response.data['code'] == 0) {
+        GlobalData.isLoggedIn = true;
         GlobalData.userInfo = RxMap<String, dynamic>(response.data['data']);
         resolveIp();
         Get.back(); // 关闭对话框

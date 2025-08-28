@@ -219,25 +219,23 @@ class GameResultOverlay extends StatelessWidget {
         child: Column(
           children: [
             Text(
-              type.contains('Match')
-                  ? result == '胜'
-                        ? '+10'
-                        : result == '败'
-                        ? '-10'
-                        : '0'
+              result == '胜'
+                  ? '+10'
+                  : result == '败'
+                  ? '-10'
                   : '0',
+
               style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
             ),
             LinearProgressIndicator(
               value:
-                  (GlobalData.userInfo['type']['levelBar'] % 100) /
-                  100, // 模拟加载进度
+                  (GlobalData.userInfo[type]['levelBar'] % 100) / 100, // 模拟加载进度
               backgroundColor: Colors.grey.shade300,
               valueColor: AlwaysStoppedAnimation<Color>(Colors.orange.shade400),
               minHeight: 8,
             ),
             Text(
-              '等级值：${GlobalData.userInfo['type']['levelBar'] % 100 + 20} / 100',
+              '等级值：${(GlobalData.userInfo[type]['levelBar'] + 20) % 100} / 100',
               style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
             ),
           ],

@@ -1,3 +1,5 @@
+import 'dart:async';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'pages/Enter/Login/login.dart';
@@ -5,6 +7,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:dio/dio.dart'; // 导入 Dio 库
 import '/global/global_data.dart'; // 导入全局数据类
 import 'install.dart';
+import 'package:app_installer/app_installer.dart'; // 导入 AppInstaller 库
 
 class SplashPage extends StatefulWidget {
   const SplashPage({super.key});
@@ -35,15 +38,12 @@ class _SplashPageState extends State<SplashPage>
     _controller.addStatusListener((status) {
       if (status == AnimationStatus.completed) {
         Future.delayed(const Duration(milliseconds: 500), () async {
-          bool needUpdate = await checkUpdate();
-          if (!needUpdate) {
-            // 没有新版本才进入登录页
-            Get.off(
-              () => Login(),
-              transition: Transition.fadeIn,
-              duration: const Duration(milliseconds: 800),
-            );
-          }
+          await checkUpdate();
+          Get.off(
+            () => Login(),
+            transition: Transition.fadeIn,
+            duration: const Duration(milliseconds: 800),
+          );
         });
       }
     });
@@ -68,41 +68,133 @@ class _SplashPageState extends State<SplashPage>
     super.dispose();
   }
 
-  Future<bool> checkUpdate() async {
+  Future<void> checkUpdate() async {
     PackageInfo packageInfo = await PackageInfo.fromPlatform();
     String currentVersion = packageInfo.version;
+    final completer = Completer<void>();
 
     try {
       Dio dio = Dio();
       final response = await dio.get('${GlobalData.url}/GetVersion');
-      String latestVersion = response.data['version'];
+      String latestVersion = response.data['data']['version'];
+      String url = response.data['data']['url'];
+      print("最新版本: $latestVersion, 当前版本: $currentVersion, 下载地址: $url");
 
       if (currentVersion != latestVersion) {
-        // 弹窗提示
-        Get.dialog(
-          AlertDialog(
-            title: Text('版本更新'),
-            content: Text('发现新版本：$latestVersion\n当前版本：$currentVersion'),
-            actions: [
-              TextButton(
-                onPressed: () async {
-                  Get.back(); // 关闭弹窗
-                  await AppUpdater.downloadAndInstallApk(
-                    "https://你的服务器地址/your_app.apk",
-                  );
-                },
-                child: Text('去更新'),
-              ),
-            ],
-          ),
-        );
-
-        return true; // 表示有新版本
+        print("需要更新");
+        Future.microtask(() {
+          Get.dialog(
+            AlertDialog(
+              title: Text('版本更新'),
+              content: Text('发现新版本：$latestVersion\n当前版本：$currentVersion'),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Get.back();
+                    completer.complete();
+                  },
+                  child: Text('取消'),
+                ),
+                TextButton(
+                  onPressed: () async {
+                    Get.back();
+                    await AppUpdater.downloadAndInstallApk(url);
+                    completer.complete();
+                  },
+                  child: Text('去更新'),
+                ),
+              ],
+            ),
+            barrierDismissible: false,
+          );
+        });
+        await completer.future;
+      } else {
+        completer.complete();
       }
     } catch (e) {
       print("获取版本失败: $e");
+      completer.complete();
+    }
+  }
+}
+
+class AppUpdater {
+  /// 下载并安装 apk
+  static Future<void> downloadAndInstallApk(String url) async {
+    final dir = Directory("/storage/emulated/0/Download");
+    if (!dir.existsSync()) {
+      dir.createSync(recursive: true);
     }
 
-    return false; // 没有新版本
+    String savePath = "${dir.path}/update.apk";
+    Dio dio = Dio();
+
+    // 下载进度
+    final progress = 0.0.obs;
+
+    // 显示下载进度弹窗
+    Get.dialog(
+      Obx(
+        () => AlertDialog(
+          title: Text('正在下载更新\n下载需打开加速器', textAlign: TextAlign.center),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              LinearProgressIndicator(value: progress.value),
+              SizedBox(height: 12),
+              Text("${(progress.value * 100).toStringAsFixed(0)}%"),
+            ],
+          ),
+        ),
+      ),
+      barrierDismissible: false,
+    );
+
+    // 执行下载
+    try {
+      await dio.download(
+        url,
+        savePath,
+        onReceiveProgress: (count, total) {
+          if (total != -1) {
+            progress.value = count / total;
+          }
+        },
+      );
+    } catch (e) {
+      print("下载失败: $e");
+      Get.dialog(
+        AlertDialog(
+          title: Text('下载失败'),
+          content: Text('请检查网络连接或加速器是否开启'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Get.back();
+              },
+              child: Text('取消下载'),
+            ),
+            TextButton(
+              onPressed: () {
+                Get.back();
+                downloadAndInstallApk(url);
+              },
+              child: Text('重新下载'),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // 下载完成，关闭弹窗
+    Get.back();
+
+    // 调用系统安装
+    try {
+      await AppInstaller.installApk(savePath);
+    } catch (e) {
+      print("安装失败: $e");
+    }
   }
 }

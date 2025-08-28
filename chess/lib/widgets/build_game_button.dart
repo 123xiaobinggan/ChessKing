@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+
 
 Widget buildGameButton(
   String title,
   String imagePath,
-  String route, {
+  void Function()? onTap,
+  {  
   int edge = 32,
-  String type = '',
 }) {
   return Padding(
     padding: const EdgeInsets.symmetric(horizontal: 40.0, vertical: 10),
@@ -40,8 +40,8 @@ Widget buildGameButton(
           splashColor: Colors.brown.shade200.withOpacity(0.3),
           highlightColor: Colors.brown.shade100.withOpacity(0.3),
           onTap: () {
-            if (route != '') {
-              Get.toNamed(route,arguments: { 'type': type });
+            if (onTap != null) {
+              onTap();
             }
           },
           child: SizedBox(

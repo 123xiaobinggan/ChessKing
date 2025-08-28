@@ -1,16 +1,10 @@
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
+import 'version_controller.dart';
 
 class Version extends StatelessWidget {
   Version({super.key});
-
-  final String version = "1.0.1";
-  final List<String> changelog = [
-    "✨ 新增用户信息编辑功能",
-    "🐞 修复部分图片上传失败问题",
-    "🚀 优化启动速度",
-    "🛠️ 小幅调整界面样式",
-  ];
+  final VersionController controller = Get.find(); // 初始化控制器
 
   @override
   Widget build(BuildContext context) {
@@ -68,7 +62,7 @@ class Version extends StatelessWidget {
           ),
           Container(
             margin: const EdgeInsets.fromLTRB(20, 30, 20, 20),
-            
+
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
               color: const Color(0xFFFFF8DC), // 米黄色背景
@@ -79,7 +73,7 @@ class Version extends StatelessWidget {
               children: [
                 const SizedBox(height: 20),
                 Text(
-                  "当前版本：v$version",
+                  "当前版本：v${controller.version}",
                   style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -96,7 +90,7 @@ class Version extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 10),
-                ...changelog.map(
+                ...controller.changelog.map(
                   (log) => Padding(
                     padding: const EdgeInsets.symmetric(vertical: 4),
                     child: Row(

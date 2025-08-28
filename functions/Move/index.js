@@ -28,7 +28,7 @@ exports.main = async (event, context) => {
             const last_step = moves[moves.length - 1]
             if (last_step.accountId === step.accountId) {
                 const types = ["車", "馬", "相", "象", "仕", "帥", "將", "兵", "卒", "炮"];
-                if (types.includes(step.type)) {
+                if (types.includes(step.type) && types.includes(last_step.type)) {
                     console.log('type,last_step.type', step.type, last_step.type)
                     return { code: 1, msg: '不是你的回合' }
                 }

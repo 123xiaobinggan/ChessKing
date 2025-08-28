@@ -7,17 +7,21 @@ const app = tcb.init({
 exports.main = async (event, context) => {
     console.log('event',JSON.parse(event.body));
     const { friends , requestFriends } = JSON.parse(event.body);
-    console.log('参数值',friends);
+    console.log('参数值',friends,requestFriends);
     const db = app.database()
+    const _ = db.command
 
     const userCollection = db.collection('UserInfo');
 
     var friendsList = [];
 
     try {
-        const friend = await userCollection.where({
-            accountId: db.command.in(friends) || db.command.in(requestFriends)
-        }).get();
+        const friend = await userCollection.where(
+            _.or([
+                { accountId: _.in(friends) },
+                { accountId: _.in(requestFriends) }
+            ])
+        ).get();
 
         console.log(friend.data)
 

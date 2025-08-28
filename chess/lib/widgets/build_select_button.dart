@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import '/pages/ChineseChessBoard/Chinese_chess_board_controller.dart';
-import 'package:get/get.dart';
 
-Widget buildSelectButton(String label, int minutes) {
-  final ChineseChessBoardController controller = Get.find();
-
+Widget buildSelectButton(
+  String label,
+  int minutes, {
+  required Function() onTap,
+}) {
   // 计算步时（秒）
   int stepSeconds;
   if (minutes == 5) {
@@ -19,19 +19,8 @@ Widget buildSelectButton(String label, int minutes) {
     padding: const EdgeInsets.symmetric(vertical: 6.0),
     child: GestureDetector(
       onTap: () {
-        controller.gameTime.value = minutes * 60;
-        if (minutes == 5) {
-          controller.stepTime.value = 15;
-        } else if (minutes == 10) {
-          controller.stepTime.value = 30;
-        } else {
-          controller.stepTime.value = 60;
-        }
         print('选择了 $label');
-        print('controller.stage: ${controller.stage.value}');
-        controller.startMatching();
-        print('controller.stage: ${controller.stage.value}');
-        
+        onTap();
       },
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
@@ -67,6 +56,7 @@ Widget buildSelectButton(String label, int minutes) {
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
                 color: Colors.brown[800],
+                decoration: TextDecoration.none,
               ),
             ),
             SizedBox(width: 12),
@@ -82,6 +72,7 @@ Widget buildSelectButton(String label, int minutes) {
                   fontSize: 14,
                   color: Colors.brown[900],
                   fontWeight: FontWeight.w500,
+                  decoration: TextDecoration.none,
                 ),
               ),
             ),

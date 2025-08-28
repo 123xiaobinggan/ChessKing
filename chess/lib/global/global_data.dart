@@ -13,34 +13,13 @@ class GlobalData extends GetxController {
     'gold': 100,
     'activity': 1120,
     'coupon': 400,
-    'friends': [
-      'xiaobinggan',
-    ],
-    "ChineseChess": {
-        'level': '1-1',
-        'total': 0,
-        'win': 0,
-        'lose': 0,
-    },
-    "Go": {
-        'level': '1-1',
-        'total': 0,
-        'win': 0,
-        'lose': 0,
-    },
-    "military": {
-        'level': '1-1',
-        'total': 0,
-        'win': 0,
-        'lose': 0,
-    },
-    "Fir": {
-        'level': '1-1',
-        'total': 0,
-        'win': 0,
-        'lose': 0,
-    },
+    'friends': ['xiaobinggan'],
+    "ChineseChess": {'level': '1-1', 'total': 0, 'win': 0, 'lose': 0},
+    "Go": {'level': '1-1', 'total': 0, 'win': 0, 'lose': 0},
+    "military": {'level': '1-1', 'total': 0, 'win': 0, 'lose': 0},
+    "Fir": {'level': '1-1', 'total': 0, 'win': 0, 'lose': 0},
   }.obs;
+  static var rid = '';
+  static Map<dynamic, dynamic>? pendingNotification;
+  static bool isLoggedIn = false;
 }
-
-

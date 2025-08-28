@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '/widgets/build_game_button.dart';
+import '/widgets/build_select_button.dart';
+
 
 class ChineseChessMatch extends StatelessWidget {
   const ChineseChessMatch({Key? key}) : super(key: key);
@@ -66,22 +68,89 @@ class ChineseChessMatch extends StatelessWidget {
                 buildGameButton(
                   '随机匹配',
                   'assets/Chinese_chess/random_match.png',
-                  'ChineseChessBoard', 
+                  () {
+                    Get.dialog(
+                      Column(
+                        children: [
+                          SizedBox(height: 100),
+                          buildSelectButton(
+                            " 5 分钟场",
+                            5,
+                            onTap: () {
+                              Get.toNamed(
+                                '/ChineseChessBoard',
+                                parameters: {
+                                  'type': "ChineseChessMatch",
+                                  'gameTime': (5*60).toString(),
+                                  "stepTime": 15.toString(),
+                                },
+                              );
+                            },
+                          ),
+                          buildSelectButton(
+                            "10 分钟场",
+                            10,
+                            onTap: () {
+                              Get.toNamed(
+                                '/ChineseChessBoard',
+                                parameters: {
+                                  'type': "ChineseChessMatch",
+                                  'gameTime': (10*60).toString(),
+                                  "stepTime": 30.toString(),
+                                },
+                              );
+                            },
+                          ),
+                          buildSelectButton(
+                            "15 分钟场",
+                            15,
+                            onTap: () {
+                              Get.toNamed(
+                                '/ChineseChessBoard',
+                                parameters: {
+                                  'type': "ChineseChessMatch",
+                                  'gameTime': (15*60).toString(),
+                                  "stepTime": 60.toString(),
+                                },
+                              );
+                            },
+                          ),
+                          buildSelectButton(
+                            "20 分钟场",
+                            20,
+                            onTap: () {
+                              Get.toNamed(
+                                '/ChineseChessBoard',
+                                parameters: {
+                                  'type': "ChineseChessMatch",
+                                  'gameTime': (20*60).toString(),
+                                  "stepTime": 60.toString(),
+                                },
+                              );
+                            },
+                          ),
+                        ],
+                      ),
+                      barrierDismissible: true,
+                      barrierColor: Colors.transparent,
+                    );
+                  },
                 ),
-                const SizedBox(height: 100), 
+                const SizedBox(height: 100),
                 buildGameButton(
                   '好友对战',
                   'assets/Chinese_chess/fight_with_friends.png',
-                  'MyFriends',
-                  edge:36,
-                  type: 'ChineseChessFriend'
+                  () {
+                    Get.toNamed('/MyFriends');
+                  },
+                  edge: 36,
                 ),
                 const SizedBox(height: 100),
-              ]
-            )
-          )
-        ]
-      )
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

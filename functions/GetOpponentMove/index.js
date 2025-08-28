@@ -9,6 +9,7 @@ exports.main = async (event, context) => {
     const db = app.database()
     const RoomCollection = db.collection('Room')
     console.log('roomId:', roomId)
+    console.log('moves_length:', moves_length)
 
     try {
         // 正确获取文档
@@ -23,6 +24,7 @@ exports.main = async (event, context) => {
 
         const roomData = res.data[0]
         const moves = roomData.moves || []
+        console.log('moves.length',moves.length)
 
         // 判断是否有新的落子
         if (moves.length === moves_length) {

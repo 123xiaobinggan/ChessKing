@@ -4,6 +4,7 @@ import '/global/global_data.dart';
 import 'package:dio/dio.dart';
 import '/pages/Tabbar/tabbar_controller.dart';
 import 'package:get_storage/get_storage.dart';
+import '/pushManager.dart';
 
 class LoginController extends GetxController {
   final accountIdController = TextEditingController();
@@ -21,6 +22,10 @@ class LoginController extends GetxController {
       passwordController.text = _storage.read('password');
       print('password,${passwordController.text}');
     }
+    if (accountIdController.text.isNotEmpty &&
+        passwordController.text.isNotEmpty) {
+      login();
+    }
   }
 
   void login() async {
@@ -36,11 +41,16 @@ class LoginController extends GetxController {
       'username': '',
       'password': password,
       'login': true,
+      'rid': GlobalData.rid,
     };
-    Get.dialog(
-      const Center(child: CircularProgressIndicator()),
-      barrierDismissible: false,
-    );
+    Future.microtask(() {
+      Get.dialog(
+        const Center(child: CircularProgressIndicator()),
+        barrierDismissible: false,
+      );
+    });
+
+    print('${GlobalData.url}/Login_Register');
     try {
       final response = await dio.post(
         '${GlobalData.url}/Login_Register',
@@ -51,6 +61,8 @@ class LoginController extends GetxController {
         'Response: ${response.data['code']}, ${response.data['code'] == 0}',
       );
       if (response.data['code'] == 0) {
+        GlobalData.isLoggedIn = true;
+        PushManager.handlePendingAfterLogin();
         Get.back();
         GlobalData.userInfo = RxMap<String, dynamic>(response.data['data']);
         resolveIp();

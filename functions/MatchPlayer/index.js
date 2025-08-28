@@ -7,7 +7,7 @@ const app = tcb.init({
 exports.main = async (event, context) => {
     const db = app.database();
     const _ = db.command;
-    const { player, type, createdRoom } = JSON.parse(event.body);
+    const { player, type, roomId } = JSON.parse(event.body);
     const roomCollection = db.collection('Room');
 
     // 状态码定义
@@ -21,13 +21,13 @@ exports.main = async (event, context) => {
 
     try {
         // 如果是新匹配
-        if (!createdRoom) {
+        if (roomId == '') {
             // 先找一个别人的等待房间
             const waitingRooms = await roomCollection
                 .where({
                     status: 'waiting',
                     type,
-                    timeMode: player.timeLeft,
+                    timeMode: player['timeLeft'],
                     'player1.accountId': _.neq(player.accountId) // 排除自己
                 })
                 .limit(1)
@@ -112,23 +112,19 @@ exports.main = async (event, context) => {
         else {
             const myRooms = await roomCollection
                 .where({
-                    status: 'playing',
-                    type,
-                    timeMode: player.timeLeft,
-                    'player1.accountId': player.accountId
+                    _id: roomId
                 })
                 .limit(1)
                 .get();
 
             if (myRooms.data.length > 0) {
+                const player1 = myRooms.data[0].player1;
                 const player2 = myRooms.data[0].player2;
-                if (player2.accountId) {
-                    player.isRed = Math.random() > 0.5;
-                    player2.isRed =!player.isRed;
+                if ((player1.accountId == player.accountId && player2.accountId) || (player2.accountId == player.accountId && player1.accountId)) {
                     return {
                         code: CODES.JOIN_SUCCESS,
                         msg: '房间有人加入',
-                        data: { roomId: myRooms.data[0]._id, player1: player, player2 }
+                        data: { roomId: myRooms.data[0]._id, player1, player2 }
                     };
                 } else {
                     return { code: CODES.WAITING, msg: '暂无他人加入房间' };

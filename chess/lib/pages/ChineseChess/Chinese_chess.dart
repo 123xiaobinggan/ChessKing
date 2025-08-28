@@ -99,7 +99,9 @@ class ChineseChess extends StatelessWidget {
                 buildGameButton(
                   '小试牛刀',
                   'assets/Chinese_chess/knife.png',
-                  'ChineseChessMatch',
+                  (){
+                    Get.toNamed('/ChineseChessMatch');
+                  }
                 ),
 
                 const SizedBox(height: 40),
@@ -141,7 +143,7 @@ class ChineseChess extends StatelessWidget {
                 buildGameButton(
                   '华山论剑',
                   'assets/Chinese_chess/hua_mountain.png',
-                  ''
+                  (){}
                   // 'ChineseChessRank',
                 ),
 
@@ -184,7 +186,7 @@ class ChineseChess extends StatelessWidget {
                 buildGameButton(
                   '拾级而上',
                   'assets/Chinese_chess/steps.png',
-                  ''
+                  (){}
                   // 'ChineseChessChallenge',
                 ),
 

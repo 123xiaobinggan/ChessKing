@@ -7,7 +7,6 @@ import 'Chinese_chess_board_controller.dart';
 import '/widgets/speech_bubble.dart';
 import '/widgets/Chinese_chess_board_piece.dart';
 
-
 class ChineseChessBoard extends StatelessWidget {
   ChineseChessBoard({super.key});
 
@@ -16,9 +15,17 @@ class ChineseChessBoard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     controller.type = Get.parameters['type'] ?? 'ChineseChessMatch';
-    controller.opponentAccountId = Get.parameters['accountId']?? '';
-    print(controller.type);
-    print(controller.opponentAccountId);
+    controller.opponentAccountId = Get.parameters['accountId'] ?? '空座';
+    controller.gameTime.value =
+        int.tryParse(Get.parameters['gameTime'] ?? '900') ?? 900;
+    controller.stepTime.value =
+        int.tryParse(Get.parameters['stepTime'] ?? '60') ?? 60;
+    controller.roomId = Get.parameters['roomId'] ?? '';
+    print('roomId:${controller.roomId}');
+    print('type:${controller.type}');
+    print('opponentAccountId:${Get.parameters['accountId']}');
+    print('gameTime:${controller.gameTime.value}');
+    print('stepTime:${controller.stepTime.value}');
     return Scaffold(
       resizeToAvoidBottomInset: false,
       appBar: PreferredSize(
@@ -90,8 +97,9 @@ class ChineseChessBoard extends StatelessWidget {
                   accountId: controller.playInfo['opponent']['accountId'].value,
                   level: controller.playInfo['opponent']['level'].value,
                   isMyTurn: controller.playInfo['opponent']['myTurn'],
-                  imagePath:
-                      controller.playInfo['opponent']['avatar'].value, // 替换为你的头像路径
+                  imagePath: controller
+                      .playInfo['opponent']['avatar']
+                      .value, // 替换为你的头像路径
                   isRed: controller
                       .playInfo['opponent']['isRed'], // 设置为 false 表示不是我方
                   totalTime: controller
@@ -108,9 +116,9 @@ class ChineseChessBoard extends StatelessWidget {
               right: 16,
               child: Obx(
                 () => buildPlayerInfoBlock(
-                  username: controller.playInfo['me']['username']??'',
-                  accountId: controller.playInfo['me']['accountId']??'',
-                  level: controller.playInfo['me']['level']??'',
+                  username: controller.playInfo['me']['username'] ?? '',
+                  accountId: controller.playInfo['me']['accountId'] ?? '',
+                  level: controller.playInfo['me']['level'] ?? '',
                   isMyTurn: controller.playInfo['me']['myTurn'],
                   imagePath: controller.playInfo['me']['avatar'], // 替换为你的头像路径
                   isRed: controller.playInfo['me']['isRed'], // 设置为 false 表示不是我方
@@ -345,7 +353,7 @@ class ChineseChessBoard extends StatelessWidget {
                       left: 75,
                       child: SpeechBubble(
                         isMyself: false, // 尖角在右下
-                        text: '早上好',
+                        text: controller.opponentChatMessage.value,
                       ),
                     )
                   : const SizedBox.shrink(),

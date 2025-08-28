@@ -2,7 +2,7 @@ import axios from "axios";
 
 // MatchPlayer
 // const url = "https://chess-king-1gvhs90sfc60354d-1358387153.ap-shanghai.app.tcloudbase.com/MatchPlayer"
-
+             
 //Move
 const url = "https://chess-king-1gvhs90sfc60354d-1358387153.ap-shanghai.app.tcloudbase.com/Move"
 
@@ -18,25 +18,39 @@ const params = {
     //     isRed: false,
     //     timeLeft: 900
     // },
-    // type: 'ChineseChessMatch'
-    roomId: 'f0a4d85168a6a6ed02c77fb87fec27ac',
-    // moves_length: 1,
+    // type: 'ChineseChessMatch',
+    // roomId: ''
+    roomId: '3d918a1b68aea7ff0006103443f9d481',
+    // moves_length: 0,
+    // step:{
+    //     accountId: 'binggangan',
+    //     type: '車',
+    //     from: {
+    //         row: 9,
+    //         col: 0
+    //     },
+    //     to:{
+    //         row: 8,
+    //         col: 0
+    //     }
+    // }
+    // undo
     step:{
         accountId: 'binggangan',
-        type: '車',
+        type: '同意和棋',
         from: {
-            row: 0,
-            col: 0
+            row: -1,
+            col: -1
         },
         to:{
-            row: 1,
-            col: 0
+            row: -1,
+            col: -1
         }
     }
-    // undo
+    // sendMessage
     // step:{
-    //     account_id: 'binggangan',
-    //     type: '请求悔棋',
+    //     accountId: 'binggangan',
+    //     type: '下午好',
     //     from: {
     //         row: -1,
     //         col: -1

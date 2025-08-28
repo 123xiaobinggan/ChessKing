@@ -296,6 +296,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "4.5.4"
+  jpush_flutter:
+    dependency: "direct main"
+    description:
+      name: jpush_flutter
+      sha256: ee664e6dabbe55d30b275dbeb9daafc7fd0fe2bb52410b58805644bc8a789883
+      url: "https://pub.dev"
+    source: hosted
+    version: "3.3.4"
   js:
     dependency: transitive
     description:

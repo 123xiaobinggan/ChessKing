@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'my_friends_controller.dart'; // 导入控制器类
+import '/widgets/confirm_dialog.dart';
 
 class MyFriends extends StatefulWidget {
   MyFriends({super.key});
@@ -112,8 +113,19 @@ class _MyFriendsState extends State<MyFriends> {
                             ),
                           ),
                           Expanded(
-                            child: Obx(
-                              () => ListView.builder(
+                            child: Obx(() {
+                              if (controller.friends.isEmpty) {
+                                return Center(
+                                  child: Text(
+                                    '暂无好友,去扩列吧',
+                                    style: TextStyle(
+                                      color: Color(0xFF5C3A21),
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                                );
+                              }
+                              return ListView.builder(
                                 itemCount: controller.friends.length,
                                 itemBuilder: (context, index) {
                                   return Container(
@@ -172,7 +184,7 @@ class _MyFriendsState extends State<MyFriends> {
                                             const SizedBox(width: 12),
                                             Text(
                                               controller
-                                                      .friends[index]['username'] ??
+                                                      .friends[index]['accountId'] ??
                                                   '未知用户',
                                               style: const TextStyle(
                                                 fontSize: 16,
@@ -182,47 +194,104 @@ class _MyFriendsState extends State<MyFriends> {
                                             ),
                                           ],
                                         ),
-                                        ElevatedButton(
-                                          onPressed: () {
-                                            controller.invite(
-                                              accountId: controller
-                                                  .friends[index]['accountId'],
-                                            );
-                                            print(
-                                              '邀请 ${controller.friends[index]['accountId']}',
-                                            );
-                                          },
-                                          style: ElevatedButton.styleFrom(
-                                            backgroundColor: const Color(
-                                              0xFFA67B5B,
-                                            ), // 木质色
-                                            foregroundColor: Colors.white,
-                                            padding: const EdgeInsets.symmetric(
-                                              horizontal: 2,
-                                              vertical: 1,
+                                        Row(
+                                          children: [
+                                            ElevatedButton(
+                                              onPressed: () {
+                                                Get.dialog(
+                                                  ConfirmDialog(
+                                                    content: '是否确认删除好友？', // 内容
+                                                    confirmText: '确认', // 确认按钮文本
+                                                    cancelText: '取消', // 取消按钮文本
+                                                    onConfirm: () {
+                                                      controller.delete(
+                                                        accountId: controller
+                                                            .friends[index]['accountId'],
+                                                      );
+                                                      print(
+                                                        '删除 ${controller.friends[index]['accountId']}',
+                                                      );
+                                                      Get.back();
+                                                    },
+                                                    onCancel: () {
+                                                      Get.back();
+                                                    },
+                                                  ),
+                                                );
+                                              },
+                                              style: ElevatedButton.styleFrom(
+                                                backgroundColor: const Color(
+                                                  0xFFA67B5B,
+                                                ), // 木质色
+                                                foregroundColor: Colors.white,
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                      horizontal: 0,
+                                                      vertical: 1,
+                                                    ),
+                                                shape: RoundedRectangleBorder(
+                                                  borderRadius:
+                                                      BorderRadius.circular(15),
+                                                ),
+                                                elevation: 1,
+                                                minimumSize: const Size(45, 25),
+                                              ),
+                                              child: const Text(
+                                                '删除',
+                                                style: TextStyle(
+                                                  fontSize: 14,
+                                                  fontWeight: FontWeight.w500,
+                                                ),
+                                                maxLines: 1,
+                                              ),
                                             ),
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius:
-                                                  BorderRadius.circular(15),
+                                            const SizedBox(
+                                              width: 8,
+                                            ), // 减少按钮之间的间距
+                                            ElevatedButton(
+                                              onPressed: () {
+                                                controller.invite(
+                                                  accountId: controller
+                                                      .friends[index]['accountId'],
+                                                );
+                                                print(
+                                                  '邀请 ${controller.friends[index]['accountId']}',
+                                                );
+                                              },
+                                              style: ElevatedButton.styleFrom(
+                                                backgroundColor: const Color(
+                                                  0xFFA67B5B,
+                                                ), // 木质色
+                                                foregroundColor: Colors.white,
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                      horizontal: 2,
+                                                      vertical: 1,
+                                                    ),
+                                                shape: RoundedRectangleBorder(
+                                                  borderRadius:
+                                                      BorderRadius.circular(15),
+                                                ),
+                                                elevation: 1,
+                                                minimumSize: const Size(45, 25),
+                                              ),
+                                              child: const Text(
+                                                '邀请',
+                                                style: TextStyle(
+                                                  fontSize: 14,
+                                                  fontWeight: FontWeight.w500,
+                                                ),
+                                                maxLines: 1,
+                                              ),
                                             ),
-                                            elevation: 1,
-                                            minimumSize: const Size(60, 30),
-                                          ),
-                                          child: const Text(
-                                            '邀请',
-                                            style: TextStyle(
-                                              fontSize: 14,
-                                              fontWeight: FontWeight.w500,
-                                            ),
-                                            maxLines: 1,
-                                          ),
+                                          ],
                                         ),
                                       ],
                                     ),
                                   );
                                 },
-                              ),
-                            ),
+                              );
+                            }),
                           ),
                         ],
                       ),
@@ -249,9 +318,6 @@ class _MyFriendsState extends State<MyFriends> {
                             ),
                             child: TextField(
                               controller: controller.searchController,
-                              onChanged: (value) {
-                                // controller.searchFriends(value);
-                              },
                               decoration: InputDecoration(
                                 hintText: '搜索好友',
                                 border: OutlineInputBorder(
@@ -260,10 +326,7 @@ class _MyFriendsState extends State<MyFriends> {
                                 suffixIcon: IconButton(
                                   icon: const Icon(Icons.search),
                                   onPressed: () {
-                                    final keyword =
-                                        controller.searchController.text;
-                                    // 调用搜索方法
-                                    // controller.searchFriends(keyword);
+                                    controller.search();
                                   },
                                 ),
                               ),
@@ -283,7 +346,7 @@ class _MyFriendsState extends State<MyFriends> {
                                 );
                               }
                               return ListView.builder(
-                                itemCount: controller.friends.length,
+                                itemCount: controller.searchFriends.length,
                                 itemBuilder: (context, index) {
                                   return Container(
                                     margin: const EdgeInsets.fromLTRB(
@@ -341,7 +404,7 @@ class _MyFriendsState extends State<MyFriends> {
                                             const SizedBox(width: 12),
                                             Text(
                                               controller
-                                                      .searchFriends[index]['username'] ??
+                                                      .searchFriends[index]['accountId'] ??
                                                   '未知用户',
                                               style: const TextStyle(
                                                 fontSize: 16,
@@ -411,7 +474,7 @@ class _MyFriendsState extends State<MyFriends> {
                           ),
                           Expanded(
                             child: Obx(() {
-                              if (controller.requestFriends.isEmpty) {
+                              if (controller.requestFriends.isEmpty) {  
                                 return Center(
                                   child: Text(
                                     '暂无申请信息',
@@ -472,7 +535,7 @@ class _MyFriendsState extends State<MyFriends> {
                                               child: ClipOval(
                                                 child: Image.network(
                                                   controller
-                                                          .friends[index]['avatar'] ??
+                                                          .requestFriends[index]['avatar'] ??
                                                       'https://binggan-1358387153.cos.ap-guangzhou.myqcloud.com/User/NotLogin.png',
                                                   fit: BoxFit.cover,
                                                 ),
@@ -481,7 +544,7 @@ class _MyFriendsState extends State<MyFriends> {
                                             const SizedBox(width: 12),
                                             Text(
                                               controller
-                                                      .friends[index]['username'] ??
+                                                      .requestFriends[index]['accountId'] ??
                                                   '未知用户',
                                               style: const TextStyle(
                                                 fontSize: 16,
@@ -497,10 +560,10 @@ class _MyFriendsState extends State<MyFriends> {
                                               onPressed: () {
                                                 controller.reject(
                                                   accountId: controller
-                                                      .friends[index]['accountId'],
+                                                      .requestFriends[index]['accountId'],
                                                 );
                                                 print(
-                                                  '拒绝 ${controller.friends[index]['accountId']}',
+                                                  '拒绝 ${controller.requestFriends[index]['accountId']}',
                                                 );
                                               },
                                               style: ElevatedButton.styleFrom(
@@ -536,10 +599,10 @@ class _MyFriendsState extends State<MyFriends> {
                                               onPressed: () {
                                                 controller.accept(
                                                   accountId: controller
-                                                      .friends[index]['accountId'],
+                                                      .requestFriends[index]['accountId'],
                                                 );
                                                 print(
-                                                  '添加 ${controller.friends[index]['accountId']}',
+                                                  '添加 ${controller.requestFriends[index]['accountId']}',
                                                 );
                                               },
                                               style: ElevatedButton.styleFrom(

@@ -8,7 +8,7 @@ exports.main = async (event, context) => {
     const db = app.database()
     const _ = db.command
     // win 1 胜利 -1 失败 0 平局
-    const { accountId, type, win } = JSON.parse(event.body);
+    const { accountId, Type, win } = event;
 
     const userCollection = db.collection('UserInfo');
     try {
@@ -16,7 +16,8 @@ exports.main = async (event, context) => {
 
         if (user.data.length > 0) {
             const userData = user.data[0];
-            const gameData = userData[type];
+            const gameData = userData[Type];
+
             gameData['activity'] = gameData['activity'] + 10;
             gameData['levelBar'] += win == 1 ? 10 : win == -1 ? -10 : 0;
             if (gameData['levelBar'] < 0) {
@@ -30,14 +31,15 @@ exports.main = async (event, context) => {
                     level[1] = 1;
                     level[0] = parseInt(level[0]) + 1;
                 }
+                gameData['level'] = level.join('-');
             }
-            gameData['level'] = level.join('-');
+            
             gameData['win'] += win == 1 ? 1 : 0;
             gameData['lose'] += win == -1 ? 1 : 0;
             gameData['total'] += 1;
             await userCollection.doc(userData._id).update({
                 data: {
-                    [type]: gameData,
+                    [Type]: gameData,
                 }
             })
             return { code: 0, msg: '更新成功', data: gameData }

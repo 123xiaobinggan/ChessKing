@@ -65,7 +65,7 @@ class _ChineseChessPieceState extends State<ChineseChessPiece>
       duration: const Duration(milliseconds: 150),
       vsync: this,
       lowerBound: 0.0,
-      upperBound: 8.0, // 浮起最大高度
+      upperBound: 4.0, // 浮起最大高度
     );
 
     _liftAnimation = _controller.drive(Tween(begin: 0.0, end: 0.02));

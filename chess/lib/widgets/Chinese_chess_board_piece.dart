@@ -3,7 +3,6 @@ import 'package:get/get.dart';
 import 'Chinese_chess_piece_painter.dart';
 import 'Chinese_chess_board_painter.dart';
 import '/pages/ChineseChessBoard/Chinese_chess_board_controller.dart';
-import '/widgets/build_select_button.dart';
 import '/widgets/drum.dart';
 import '/widgets/build_matching_word.dart';
 import 'send_king_alert.dart';
@@ -60,7 +59,7 @@ class ChineseChessBoardWithPieces extends StatelessWidget {
                 // 棋盘
                 CustomPaint(
                   // 棋盘
-                  size: Size(boardWidth, boardHeight),
+                  size: Size(boardWidth, boardHeight * 1.05),
                   painter: ChineseChessPainter(),
                 ),
 
@@ -74,22 +73,8 @@ class ChineseChessBoardWithPieces extends StatelessWidget {
                             minimumSize: Size(150, 50),
                             textStyle: TextStyle(fontSize: 20),
                           ),
-                          onPressed: controller.startSelect,
+                          onPressed: controller.startMatching,
                           child: Text("开始对弈"),
-                        ),
-                      );
-
-                    case GameStage.selecting:
-                      return Center(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.max,
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            buildSelectButton("  5 分钟场", 5),
-                            buildSelectButton("10 分钟场", 10),
-                            buildSelectButton("15 分钟场", 15),
-                            buildSelectButton("20 分钟场", 20),
-                          ],
                         ),
                       );
 
@@ -112,9 +97,9 @@ class ChineseChessBoardWithPieces extends StatelessWidget {
                           // 棋子
                           ...controller.pieces.map((p) {
                             final double targetLeft =
-                                p.pos.col * boardWidth * 0.88 / 8 + 3;
+                                p.pos.col * boardWidth * 0.88 / 8 + 1.6;
                             final double targetTop =
-                                p.pos.row * boardHeight * 0.90 / 9 + 1;
+                                p.pos.row * boardHeight * 0.889 / 9 - 0.5;
 
                             return AnimatedPositioned(
                               key: ValueKey(p),
@@ -143,14 +128,14 @@ class ChineseChessBoardWithPieces extends StatelessWidget {
                                     boardWidth *
                                     0.88 /
                                     8 +
-                                3 +
+                                1.6 +
                                 20 / 1.414,
                             top:
                                 controller.sourcePoint.value.row *
                                     boardHeight *
-                                    0.90 /
+                                    0.889 /
                                     9 +
-                                1 +
+                                1.5 +
                                 20 / 1.414,
                             child: Container(
                               width: 12,
@@ -171,11 +156,11 @@ class ChineseChessBoardWithPieces extends StatelessWidget {
                             (p) => Positioned(
                               left:
                                   p.col * boardWidth * 0.88 / 8 +
-                                  3 +
+                                  1.6 +
                                   20 / 1.414,
                               top:
-                                  p.row * boardHeight * 0.90 / 9 +
-                                  1 +
+                                  p.row * boardHeight * 0.889 / 9 +
+                                  1.5 +
                                   20 / 1.414,
                               child: GestureDetector(
                                 onTap: () {
@@ -201,9 +186,9 @@ class ChineseChessBoardWithPieces extends StatelessWidget {
                           // 棋子
                           ...controller.pieces.map((p) {
                             final double targetLeft =
-                                p.pos.col * boardWidth * 0.88 / 8 + 3;
+                                p.pos.col * boardWidth * 0.88 / 8 + 1.6;
                             final double targetTop =
-                                p.pos.row * boardHeight * 0.90 / 9 + 1;
+                                p.pos.row * boardHeight * 0.889 / 9 - 0.5;
 
                             return AnimatedPositioned(
                               key: ValueKey(p),
@@ -232,14 +217,14 @@ class ChineseChessBoardWithPieces extends StatelessWidget {
                                     boardWidth *
                                     0.88 /
                                     8 +
-                                3 +
+                                1.6 +
                                 20 / 1.414,
                             top:
                                 controller.sourcePoint.value.row *
                                     boardHeight *
-                                    0.90 /
+                                    0.889 /
                                     9 +
-                                1 +
+                                1.5 +
                                 20 / 1.414,
                             child: Container(
                               width: 12,
@@ -260,11 +245,11 @@ class ChineseChessBoardWithPieces extends StatelessWidget {
                             (p) => Positioned(
                               left:
                                   p.col * boardWidth * 0.88 / 8 +
-                                  3 +
+                                  1.6 +
                                   20 / 1.414,
                               top:
-                                  p.row * boardHeight * 0.90 / 9 +
-                                  1 +
+                                  p.row * boardHeight * 0.889 / 9 +
+                                  1.5 +
                                   20 / 1.414,
                               child: GestureDetector(
                                 onTap: () {
@@ -286,9 +271,10 @@ class ChineseChessBoardWithPieces extends StatelessWidget {
                             result: controller.result,
                             me: controller.playInfo['me'],
                             opponent: controller.playInfo['opponent'],
-                            type: controller.type.contains('ChineseChess')?'ChineseChess':'',
-                            onRestart: () =>
-                                controller.stage.value = GameStage.selecting,
+                            type: controller.type.contains('ChineseChess')
+                                ? 'ChineseChess'
+                                : '',
+                            onRestart: () => controller.startMatching(),
                           ),
                         ],
                       );

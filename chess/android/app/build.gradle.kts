@@ -29,6 +29,11 @@ android {
         versionCode = flutter.versionCode
         versionName = flutter.versionName
         minSdkVersion(23)
+        ndk {
+            // 使用 add 方法设置 ABI 过滤
+            abiFilters.add("armeabi-v7a")
+            abiFilters.add("arm64-v8a") // 极光需要
+        }
     }
 
     buildTypes {

@@ -77,7 +77,7 @@ class MyInfo extends StatelessWidget {
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
-                        
+
                         children: [
                           SizedBox(height: 20),
                           // username
@@ -239,218 +239,215 @@ class MyInfo extends StatelessWidget {
               ),
 
               // 功能按钮
-              Container(
-                height: 350,
-                margin: EdgeInsets.fromLTRB(20, 20, 20, 0),
+              Expanded(
+                child: Container(
+                  // height: 350,
+                  margin: EdgeInsets.fromLTRB(20, 20, 20, 0),
 
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(16),
-                  color: const Color.fromARGB(255, 227, 196, 68),
-                ),
-                child: Stack(
-                  children: [
-                    // 选项背景
-                    Positioned.fill(
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(16),
-                        child: Transform.rotate(
-                          origin: Offset(0, 0),
-                          angle: 3.1415926 / 2, // 倾斜角度
-                          child: FittedBox(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(20),
+                    color: const Color.fromARGB(255, 227, 196, 68),
+                  ),
+                  child: Stack(
+                    children: [
+                      // 选项背景
+                      Positioned.fill(
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(16),
+
+                          child: Image.asset(
+                            'assets/MyInfo/OptionBackGround.png',
                             fit: BoxFit.cover,
-                            child: Image.asset(
-                              'assets/MyInfo/OptionBackGround.png',
-                              fit: BoxFit.cover,
-                            ),
                           ),
                         ),
                       ),
-                    ),
-                    // 选项按钮
-                    ListView(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 16,
-                      ),
-                      children: [
-                        // 我的好友
-                        ListTile(
-                          leading: Image.asset(
-                            'assets/MyInfo/Friend.png',
-                            width: 24,
-                            height: 24,
-                          ),
-                          title: Text(
-                            '我的好友',
-                            style: TextStyle(
-                              color: Colors.brown.shade800,
-                              fontSize: 17,
-                              fontWeight: FontWeight.w600,
-                              fontFamily: 'Roboto',
-                              shadows: [
-                                Shadow(
-                                  color: Colors.black26,
-                                  offset: Offset(0.5, 0.5),
-                                  blurRadius: 1,
-                                ),
-                              ],
-                            ),
-                          ),
-                          trailing: Icon(
-                            Icons.chevron_right,
-                            size: 26,
-                            color: Colors.brown.shade400,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          tileColor: Colors.brown.withValues(
-                            alpha: (0.3 * 255),
-                          ), // 半透明背景突出每个item
-                          onTap: () {
-                            Get.toNamed('/MyFriends');
-                          },
+
+                      // 选项按钮
+                      ListView(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 16,
                         ),
-                        Divider(thickness: 2),
-                        // 等级
-                        ListTile(
-                          leading: Image.asset(
-                            'assets/MyInfo/Level.png',
-                            width: 24,
-                            height: 24,
-                          ),
-                          title: Text(
-                            '我的等级',
-                            style: TextStyle(
-                              color: Colors.brown.shade800,
-                              fontSize: 17,
-                              fontWeight: FontWeight.w600,
-                              fontFamily: 'Roboto',
-                              shadows: [
-                                Shadow(
-                                  color: Colors.black26,
-                                  offset: Offset(0.5, 0.5),
-                                  blurRadius: 1,
-                                ),
-                              ],
+                        children: [
+                          // 我的好友
+                          ListTile(
+                            leading: Image.asset(
+                              'assets/MyInfo/Friend.png',
+                              width: 24,
+                              height: 24,
                             ),
-                          ),
-                          trailing: Icon(
-                            Icons.chevron_right,
-                            size: 26,
-                            color: Colors.brown.shade400,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          tileColor: Colors.brown.withValues(
-                            alpha: (0.3 * 255),
-                          ), // 半透明背景突出每个item
-                          onTap: () {
-                            Get.toNamed('/Level');
-                          },
-                        ),
-                        Divider(thickness: 2),
-                        // 版本发行
-                        ListTile(
-                          leading: Image.asset(
-                            'assets/MyInfo/Version.png',
-                            width: 24,
-                            height: 24,
-                          ),
-                          title: Text(
-                            '版本发行',
-                            style: TextStyle(
-                              color: Colors.brown.shade800,
-                              fontSize: 17,
-                              fontWeight: FontWeight.w600,
-                              fontFamily: 'Roboto',
-                              shadows: [
-                                Shadow(
-                                  color: Colors.black26,
-                                  offset: Offset(0.5, 0.5),
-                                  blurRadius: 1,
-                                ),
-                              ],
-                            ),
-                          ),
-                          trailing: Icon(
-                            Icons.chevron_right,
-                            size: 26,
-                            color: Colors.brown.shade400,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          tileColor: Colors.brown.withValues(
-                            alpha: (0.3 * 255),
-                          ), // 半透明背景突出每个item
-                          onTap: () {
-                            Get.toNamed('/Version');
-                          },
-                        ),
-                        Divider(thickness: 2),
-                        // 退出登录
-                        ListTile(
-                          leading: Image.asset(
-                            'assets/MyInfo/LogOut.png',
-                            width: 24,
-                            height: 24,
-                          ),
-                          title: Text(
-                            '退出登录',
-                            style: TextStyle(
-                              color: Colors.brown.shade800,
-                              fontSize: 17,
-                              fontWeight: FontWeight.w600,
-                              fontFamily: 'Roboto',
-                              shadows: [
-                                Shadow(
-                                  color: Colors.black26,
-                                  offset: Offset(0.5, 0.5),
-                                  blurRadius: 1,
-                                ),
-                              ],
-                            ),
-                          ),
-                          trailing: Icon(
-                            Icons.chevron_right,
-                            size: 26,
-                            color: Colors.brown.shade400,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          tileColor: Colors.brown.withValues(
-                            alpha: (0.3 * 255),
-                          ), // 半透明背景突出每个item
-                          onTap: () {
-                            Get.dialog(
-                              AlertDialog(
-                                title: Text('退出登录'),
-                                content: Text('确定要退出登录吗？'),
-                                actions: [
-                                  TextButton(
-                                    onPressed: () {
-                                      Get.back(); // 取消
-                                    },
-                                    child: Text('取消'),
-                                  ),
-                                  TextButton(
-                                    onPressed: () {
-                                      controller.logout();
-                                    },
-                                    child: Text('确定'),
+                            title: Text(
+                              '我的好友',
+                              style: TextStyle(
+                                color: Colors.brown.shade800,
+                                fontSize: 17,
+                                fontWeight: FontWeight.w600,
+                                fontFamily: 'Roboto',
+                                shadows: [
+                                  Shadow(
+                                    color: Colors.black26,
+                                    offset: Offset(0.5, 0.5),
+                                    blurRadius: 1,
                                   ),
                                 ],
                               ),
-                            );
-                          },
-                        ),
-                        Divider(thickness: 2),
-                      ],
-                    ),
-                  ],
+                            ),
+                            trailing: Icon(
+                              Icons.chevron_right,
+                              size: 26,
+                              color: Colors.brown.shade400,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            tileColor: Colors.brown.withValues(
+                              alpha: (0.3 * 255),
+                            ), // 半透明背景突出每个item
+                            onTap: () {
+                              Get.toNamed('/MyFriends');
+                            },
+                          ),
+                          Divider(thickness: 2),
+                          // 等级
+                          ListTile(
+                            leading: Image.asset(
+                              'assets/MyInfo/Level.png',
+                              width: 24,
+                              height: 24,
+                            ),
+                            title: Text(
+                              '我的等级',
+                              style: TextStyle(
+                                color: Colors.brown.shade800,
+                                fontSize: 17,
+                                fontWeight: FontWeight.w600,
+                                fontFamily: 'Roboto',
+                                shadows: [
+                                  Shadow(
+                                    color: Colors.black26,
+                                    offset: Offset(0.5, 0.5),
+                                    blurRadius: 1,
+                                  ),
+                                ],
+                              ),
+                            ),
+                            trailing: Icon(
+                              Icons.chevron_right,
+                              size: 26,
+                              color: Colors.brown.shade400,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            tileColor: Colors.brown.withValues(
+                              alpha: (0.3 * 255),
+                            ), // 半透明背景突出每个item
+                            onTap: () {
+                              Get.toNamed('/Level');
+                            },
+                          ),
+                          Divider(thickness: 2),
+                          // 版本发行
+                          ListTile(
+                            leading: Image.asset(
+                              'assets/MyInfo/Version.png',
+                              width: 24,
+                              height: 24,
+                            ),
+                            title: Text(
+                              '版本发行',
+                              style: TextStyle(
+                                color: Colors.brown.shade800,
+                                fontSize: 17,
+                                fontWeight: FontWeight.w600,
+                                fontFamily: 'Roboto',
+                                shadows: [
+                                  Shadow(
+                                    color: Colors.black26,
+                                    offset: Offset(0.5, 0.5),
+                                    blurRadius: 1,
+                                  ),
+                                ],
+                              ),
+                            ),
+                            trailing: Icon(
+                              Icons.chevron_right,
+                              size: 26,
+                              color: Colors.brown.shade400,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            tileColor: Colors.brown.withValues(
+                              alpha: (0.3 * 255),
+                            ), // 半透明背景突出每个item
+                            onTap: () {
+                              Get.toNamed('/Version');
+                            },
+                          ),
+                          Divider(thickness: 2),
+                          // 退出登录
+                          ListTile(
+                            leading: Image.asset(
+                              'assets/MyInfo/LogOut.png',
+                              width: 24,
+                              height: 24,
+                            ),
+                            title: Text(
+                              '退出登录',
+                              style: TextStyle(
+                                color: Colors.brown.shade800,
+                                fontSize: 17,
+                                fontWeight: FontWeight.w600,
+                                fontFamily: 'Roboto',
+                                shadows: [
+                                  Shadow(
+                                    color: Colors.black26,
+                                    offset: Offset(0.5, 0.5),
+                                    blurRadius: 1,
+                                  ),
+                                ],
+                              ),
+                            ),
+                            trailing: Icon(
+                              Icons.chevron_right,
+                              size: 26,
+                              color: Colors.brown.shade400,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            tileColor: Colors.brown.withValues(
+                              alpha: (0.3 * 255),
+                            ), // 半透明背景突出每个item
+                            onTap: () {
+                              Get.dialog(
+                                AlertDialog(
+                                  title: Text('退出登录'),
+                                  content: Text('确定要退出登录吗？'),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () {
+                                        Get.back(); // 取消
+                                      },
+                                      child: Text('取消'),
+                                    ),
+                                    TextButton(
+                                      onPressed: () {
+                                        controller.logout();
+                                      },
+                                      child: Text('确定'),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
+                          ),
+                          Divider(thickness: 2),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ],
