@@ -114,7 +114,7 @@ class _CheckmateAlertState extends State<CheckmateAlert>
 
               // 剑动画
               Align(
-                alignment: Alignment(0, -1.5), // 0 水平居中，-0.7 上方偏移
+                alignment: Alignment(0, -1.8), // 0 水平居中，-1.5 上方偏移
                 child: AnimatedBuilder(
                   animation: _swordController,
                   builder: (context, _) {
@@ -126,7 +126,7 @@ class _CheckmateAlertState extends State<CheckmateAlert>
 
                     // 计算偏移量，t 从 0 ~ 1，插入方向竖直向下（y 轴正方向）
                     double t = curvedAnim.value;
-                    double offsetY = 120 * t; // 从0到120向下
+                    double offsetY = 110 * t; // 从0到120向下
                     return Transform.translate(
                       offset: Offset(0, offsetY),
                       child: Image.asset(
@@ -167,8 +167,8 @@ class _CheckmateAlertState extends State<CheckmateAlert>
 
               // 杀字
               Positioned(
-                right: 120,
-                bottom: 120,
+                right: 100,
+                bottom: 100,
                 child: FadeTransition(
                   opacity: _shaController,
                   child: GradientText(

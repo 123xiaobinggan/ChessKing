@@ -153,7 +153,7 @@ class AppUpdater {
 
     // 执行下载
     try {
-      await dio.download(
+      final res = await dio.download(
         url,
         savePath,
         onReceiveProgress: (count, total) {
@@ -162,6 +162,30 @@ class AppUpdater {
           }
         },
       );
+      if (res.statusCode != 200) {
+        print("下载失败");
+        Get.dialog(
+          AlertDialog(
+            title: Text('下载失败'),
+            content: Text('请检查网络连接或加速器是否开启'),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Get.back();
+                },
+                child: Text('取消下载'),
+              ),
+              TextButton(
+                onPressed: () {
+                  Get.back();
+                  downloadAndInstallApk(url);
+                },
+                child: Text('重新下载'),
+              ),
+            ],
+          ),
+        );
+      }
     } catch (e) {
       print("下载失败: $e");
       Get.dialog(

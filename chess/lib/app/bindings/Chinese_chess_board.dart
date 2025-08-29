@@ -4,6 +4,9 @@ import 'package:get/get.dart';
 class ChineseChessBoardBindings implements Bindings {
   @override
   void dependencies() {
-    Get.lazyPut(() => ChineseChessBoardController());
+    Get.lazyPut<ChineseChessBoardController>(
+      () => ChineseChessBoardController(),
+      fenix: true,
+    );
   }
 }

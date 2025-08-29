@@ -92,6 +92,9 @@ class ChineseChessBoardController extends GetxController {
   void onInit() {
     super.onInit();
     print('onInit');
+    Future.delayed(const Duration(seconds: 1), () {
+      isInCheckMateNotifier.value = true;
+    });
 
     playInfo['me']['myTurn'].listen((value) {
       if (stage.value != GameStage.playing) {
@@ -134,29 +137,18 @@ class ChineseChessBoardController extends GetxController {
 
   @override
   void onClose() {
-    super.onClose();
-    chatInputController.dispose();
     stopTimer();
     if (stage.value == GameStage.matching) {
       cancleMatch();
+    } else if (stage.value == GameStage.playing) {
+      sendMyMove('认输', Point(row: -1, col: -1), Point(row: -1, col: -1));
+      overGame('败', 'surrender');
+    } else {
+      Get.back();
     }
-    if (stage.value == GameStage.playing) {
-      Get.dialog(
-        ConfirmDialog(
-          content: '是否退出游戏?',
-          onConfirm: () {
-            sendMyMove('认输', Point(row: -1, col: -1), Point(row: -1, col: -1));
-            overGame('败', 'surrender');
-            Get.back(); // 关闭对话框
-            print('Get.back()');
-          },
-          onCancel: () {
-            Get.back(); // 关闭对话框
-            print('Get.back()');
-          },
-        ),
-      );
-    }
+    chatInputController.dispose();
+    Get.delete<ChineseChessBoardController>();
+    super.onClose();
   }
 
   // 取消匹配
@@ -178,6 +170,7 @@ class ChineseChessBoardController extends GetxController {
     for (var piece in pieces) {
       chessBoard[piece.pos.row][piece.pos.col] = copyPiece(piece);
     }
+    sourcePoint.value = Point(row: -1, col: -1);
   }
 
   // 初始化棋子
@@ -954,6 +947,8 @@ class ChineseChessBoardController extends GetxController {
                   response.data['data']['player1']['isRed'];
               playInfo['me']['myTurn'].value =
                   response.data['data']['player1']['isRed'];
+              playInfo['me']['myTurn'].refresh();
+              playInfo['opponent']['myTurn'].refresh();
             } else {
               playInfo['opponent']['accountId'].value =
                   response.data['data']['player1']['accountId'];
@@ -971,6 +966,8 @@ class ChineseChessBoardController extends GetxController {
                   response.data['data']['player2']['isRed'];
               playInfo['me']['myTurn'].value =
                   response.data['data']['player2']['isRed'];
+              playInfo['me']['myTurn'].refresh();
+              playInfo['opponent']['myTurn'].refresh();
             }
 
             print('roomId,$roomId,${response.data['data']['roomId']}');
@@ -1227,6 +1224,7 @@ class ChineseChessBoardController extends GetxController {
       }
     }
     turnTransition();
+    moves.clear();
   }
 
   // 请求悔棋
@@ -1332,6 +1330,7 @@ class ChineseChessBoardController extends GetxController {
 
   // 处理对方悔棋请求
   void dealOpponentUndo() {
+    print('对方请求悔棋');
     Get.dialog(
       ConfirmDialog(
         content: '对方请求悔棋',
@@ -1366,6 +1365,7 @@ class ChineseChessBoardController extends GetxController {
 
   // 处理对方和棋请求
   void dealOpponentDraw() {
+    print("对方请求和棋");
     Get.dialog(
       ConfirmDialog(
         content: '对方请求和棋',
@@ -1373,8 +1373,7 @@ class ChineseChessBoardController extends GetxController {
         cancelText: '拒绝',
         onConfirm: () {
           Get.back();
-          print('Get.back()');
-          overGame('和', 'draw');
+          acceptOpponentDraw();
         },
         onCancel: () {
           Get.back();
@@ -1385,6 +1384,12 @@ class ChineseChessBoardController extends GetxController {
       barrierColor: Colors.transparent,
       barrierDismissible: false,
     );
+  }
+
+  // 接受对方和棋请求
+  void acceptOpponentDraw() async {
+    await sendMyMove('同意和棋', Point(row: -1, col: -1), Point(row: -1, col: -1));
+    overGame('和', 'draw');
   }
 
   // 拒绝对方和棋请求
@@ -1467,7 +1472,7 @@ class ChineseChessBoardController extends GetxController {
   }
 
   // 开始计局时和步时
-  void startTimer(RxInt time, RxInt stepTime, bool myTurn) {
+  void startTimer(RxInt time, RxInt stepTime, bool myTurn) async {
     stopTimer();
     _gametimer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (time > 0 && stepTime.value > 0) {
@@ -1476,9 +1481,27 @@ class ChineseChessBoardController extends GetxController {
       } else {
         stopTimer();
         if (myTurn == true) {
-          overGame('败', 'timeOut');
+          Get.dialog(
+            ShowMessageDialog(content: '我方超时'),
+            barrierColor: Colors.transparent,
+            barrierDismissible: false,
+          );
+          Future.delayed(const Duration(milliseconds: 1500), () {
+            Get.back();
+            print('Get.back()');
+            overGame('败', 'timeOut');
+          });
         } else {
-          overGame('胜', 'timeOut');
+          Get.dialog(
+            ShowMessageDialog(content: '对方超时'),
+            barrierColor: Colors.transparent,
+            barrierDismissible: false,
+          );
+          Future.delayed(const Duration(milliseconds: 1500), () {
+            Get.back();
+            print('Get.back()');
+            overGame('胜', 'timeOut');
+          });
         }
         print('时间耗尽，游戏结束');
       }
