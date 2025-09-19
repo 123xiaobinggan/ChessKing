@@ -170,6 +170,16 @@
       },
       "entry": "index.js", 
       "path": "/SendInvitation" 
+    },
+    {
+      "name": "GetNotAddedFriends",
+      "config": {
+        "timeout": 30, 
+        "runtime": "Nodejs18.15", 
+        "memorySize": 256 
+      },
+      "entry": "index.js", 
+      "path": "/GetNotAddedFriends" 
     }
   ]
 }

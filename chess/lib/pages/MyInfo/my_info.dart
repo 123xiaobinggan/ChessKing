@@ -343,7 +343,12 @@ class MyInfo extends StatelessWidget {
                               alpha: (0.3 * 255),
                             ), // 半透明背景突出每个item
                             onTap: () {
-                              Get.toNamed('/Level');
+                              Get.toNamed(
+                                '/Level',
+                                parameters: {
+                                  'accountId': GlobalData.userInfo['accountId'],
+                                },
+                              );
                             },
                           ),
                           Divider(thickness: 2),

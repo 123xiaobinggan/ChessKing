@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:jpush_flutter/jpush_flutter.dart';
 import '/global/global_data.dart'; // 存储全局数据
 import 'package:get/get.dart';
+import 'package:app_settings/app_settings.dart';
 
 class PushManager {
   static final _jpush = JPush.newJPush();
@@ -13,7 +14,7 @@ class PushManager {
     _jpush.setup(
       appKey: "74dacc1e2e26774220395b0e",
       channel: "4de60b2fb9fda99e39c12292",
-      production: false,
+      production: true,
       debug: true,
     );
 
@@ -43,6 +44,7 @@ class PushManager {
       if (message != null) {
         debugPrint("冷启动收到通知: $message");
         GlobalData.pendingNotification = message;
+        _handleNotification(message);
       }
     });
   }
@@ -56,8 +58,7 @@ class PushManager {
       extraData = jsonDecode(extraData);
     }
 
-    if (extraData != null && extraData['roomId'] != null) {
-      String roomId = extraData['roomId'].toString();
+    if (extraData != null) {
       String accountId = extraData['accountId'].toString();
       String type = extraData['type'].toString();
       int gameTime = int.tryParse(extraData['gameTime'].toString()) ?? 0;
@@ -68,7 +69,6 @@ class PushManager {
         Get.toNamed(
           '/ChineseChessBoard',
           parameters: {
-            'roomId': roomId,
             'accountId': accountId,
             'type': type,
             'gameTime': gameTime.toString(),
@@ -87,6 +87,40 @@ class PushManager {
     if (GlobalData.pendingNotification != null) {
       _handleNotification(GlobalData.pendingNotification!);
       GlobalData.pendingNotification = null;
+    }
+  }
+
+  /// 检查推送权限
+  static Future<void> checkAndRequestPermission(BuildContext context) async {
+    bool? enabled = await _jpush.isNotificationEnabled();
+    print('推送权限：$enabled');
+    if (enabled == false) {
+      // 弹窗提示用户去系统设置开启
+      showDialog(
+        context: context,
+        builder: (ctx) {
+          return AlertDialog(
+            title: const Text("推送权限关闭"),
+            content: const Text("为了保证你能收到对局邀请，请在系统设置中开启通知权限。"),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text("取消"),
+              ),
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  // 跳转到系统通知设置页面
+                  AppSettings.openAppSettings(
+                    type: AppSettingsType.notification,
+                  );
+                },
+                child: const Text("去设置"),
+              ),
+            ],
+          );
+        },
+      );
     }
   }
 }

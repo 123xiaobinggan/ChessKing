@@ -2,14 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import '/app/routes/app_pages.dart';
-import '/pages/ChineseChessBoard/Chinese_chess_board_controller.dart';
 import 'start.dart';
-import 'pushManager.dart';
+import 'api/pushManager.dart';
+import './api/socketService.dart'; // 引入 SocketService
+import './global/global_data.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await GetStorage.init();
-  Get.lazyPut(() => ChineseChessBoardController());
+  GlobalData.socketService = SocketService(); // 实例化 SocketService
   await PushManager.init();
   runApp(MyApp());
 }

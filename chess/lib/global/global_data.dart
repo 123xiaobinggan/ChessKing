@@ -1,11 +1,11 @@
 import 'package:get/get.dart';
 
 class GlobalData extends GetxController {
-  static var url =
-      "https://chess-king-1gvhs90sfc60354d-1358387153.ap-shanghai.app.tcloudbase.com";
+  static var url = "http://120.48.156.237:3000";
+  static var socketService;
   static var userInfo = <String, dynamic>{
-    'accountId': '123456',
-    'username': '张三',
+    'accountId': '',
+    'username': '',
     'avatar': 'assets/MyInfo/NotLogin.png',
     'description': '孤独求败！',
     'phone': '15659267970',

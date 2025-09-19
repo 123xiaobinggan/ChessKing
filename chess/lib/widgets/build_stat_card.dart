@@ -79,11 +79,15 @@ Widget buildStatCard({
                                   padding: const EdgeInsets.symmetric(
                                     vertical: 2,
                                   ),
-                                  child: Text(
-                                    '${entry.key}: ${entry.value}',
-                                    style: const TextStyle(
-                                      color: Colors.black87,
-                                      fontSize: 14,
+                                  child: FittedBox(
+                                    alignment: Alignment.centerLeft, // 保持靠左
+                                    fit: BoxFit.scaleDown, // 只缩小不放大
+                                    child: Text(
+                                      '${entry.key}: ${entry.value}',
+                                      style: const TextStyle(
+                                        color: Colors.black87,
+                                        fontSize: 14,
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -93,7 +97,8 @@ Widget buildStatCard({
                             ..addAll(
                               List.generate(
                                 3 - chunk.length,
-                                (_) => const Expanded(child: SizedBox()),
+                                (_) =>
+                                    const Expanded(child: SizedBox(width: 30)),
                               ),
                             ),
                     );

@@ -1,4 +1,4 @@
-import '/pages/level/level_controller.dart';
+import '/pages/Level/level_controller.dart';
 import 'package:get/get.dart';
 
 class LevelBindings implements Bindings {

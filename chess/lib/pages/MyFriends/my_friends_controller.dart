@@ -8,72 +8,123 @@ import '/widgets/build_select_button.dart'; // 导入选择按钮组件
 
 class MyFriendsController extends GetxController {
   final RxList<dynamic> friends = [].obs; // 好友列表
-  final RxList<dynamic> searchFriends = [].obs; // 搜索结果列表
   final RxList<dynamic> requestFriends = [].obs; // 好友申请列表
+  final RxList<dynamic> notAddFriends = [].obs; // 未添加的好友列表
+  final RxList<dynamic> displayList = [].obs; // 搜索结果列表
   final TextEditingController searchController =
       TextEditingController(); // 搜索控制器
 
   @override
-  void onInit() {
+  void onInit() async {
     super.onInit();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      getFriends(); // 初始化时获取好友列表
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await getFriends(); // 初始化时获取好友列表
+      getNotAddedFriends(); // 初始化时获取未添加的好友列表
     });
   }
 
-  void getFriends() async {
-    Get.dialog(
-      Center(
-        child: CircularProgressIndicator(), // 显示加载指示器
-      ),
-      barrierDismissible: false, // 禁止用户点击背景关闭对话框
-    );
-    print(GlobalData.userInfo['friends']);
+  Future<void> getFriends() async {
     var dio = Dio();
-    var params = {
-      'friends': GlobalData.userInfo['friends'], // 好友列表
-      'requestFriends': GlobalData.userInfo['requestFriends'], // 好友申请列表
-    };
+    var params = {'accountId': GlobalData.userInfo['accountId']};
     try {
       final res = await dio.post(
         '${GlobalData.url}/GetFriends',
         data: params, // 发送请求参数
       );
       if (res.data['code'] == 0) {
-        Get.back(); // 关闭对话框
-
-        for (var friend in res.data['data']) {
-          if (GlobalData.userInfo['friends'].contains(friend['accountId'])) {
-            friends.add(friend); // 添加好友到列表中
-          } else {
-            print(friend);
-            requestFriends.add(friend); // 添加好友到列表中
+        print('friends: ${res.data['data']['friendsList']}');
+        print('requestFriends: ${res.data['data']['requestFriendsList']}');
+        for (var friend in res.data['data']['friendsList']) {
+          if (friend['accountId'] == GlobalData.userInfo['accountId']) {
+            continue; // 如果是自己，则跳过
           }
+          if (friends.any(
+            (element) => element['accountId'] == friend['accountId'],
+          )) {
+            continue; // 如果已存在，则跳过
+          }
+          friends.add(friend); // 添加好友到列表中
         }
 
+        for (var requestFriend in res.data['data']['requestFriendsList']) {
+          if (requestFriend['accountId'] == GlobalData.userInfo['accountId']) {
+            continue; // 如果是自己，则跳过
+          }
+          if (requestFriends.any(
+            (element) => element['accountId'] == requestFriend['accountId'],
+          )) {
+            continue; // 如果已存在，则跳过
+          }
+          requestFriends.add(requestFriend); // 添加好友申请到列表中
+        }
+        GlobalData.userInfo['friends'].clear();
+        GlobalData.userInfo['friends'].addAll(
+          friends.map((f) => f['accountId']).toList(),
+        );
         print('friends:$friends'); // 打印好友列表
         print('requestFriends:$requestFriends'); // 打印好友申请列表
       } else {
         print(res.data);
-        Get.back(); // 关闭对话框
         Get.snackbar(
           '错误',
           res.data['msg'],
-          snackPosition: SnackPosition.TOP, // 显示在底部
+          snackPosition: SnackPosition.TOP, // 显示在顶部
         );
       }
     } catch (e) {
-      Get.back(); // 关闭对话框
       print(e); // 打印错误信息
       Get.snackbar(
         '错误',
         '获取好友列表失败',
-        snackPosition: SnackPosition.TOP, // 显示在底部
+        snackPosition: SnackPosition.TOP, // 显示在顶部
       ); // 显示错误提示
     }
   }
 
+  void getNotAddedFriends() async {
+    print('friends,${friends.map((e) => e['accountId'])}');
+    var dio = Dio();
+    var params = {
+      'friends': [...friends, ...notAddFriends], // 好友列表
+    };
+    try {
+      final res = await dio.post(
+        '${GlobalData.url}/GetNotAddFriends',
+        data: params, // 发送请求参数
+      );
+      if (res.data['code'] == 0) {
+        // print('stranger: ${res.data['data']}');
+        for (var friend in res.data['data']) {
+          if (friend['accountId'] == GlobalData.userInfo['accountId']) {
+            continue; // 如果是自己，则跳过
+          }
+          var inFriends = false;
+          friends.any((f) {
+            if (f['accountId'] == friend['accountId']) {
+              inFriends = true; // 如果已存在，则跳过
+              return true; // 终止循环
+            }
+            return false;
+          });
+          if (inFriends) {
+            continue; // 如果已存在，则跳过
+          }
+          notAddFriends.add(friend); // 添加好友到列表中
+        }
+        displayList.assignAll(notAddFriends);
+        print(
+          'stranger,${notAddFriends.map((f) => f['accountId'])}',
+        ); // 打印未添加的好友列表
+      } else {
+        print(res.data); // 打印错误信息
+      }
+    } catch (e) {
+      print(e); // 打印错误信息
+    }
+  }
+
   void invite({required String accountId}) {
+    String type;
     Get.dialog(
       Center(
         child: Column(
@@ -84,6 +135,7 @@ class MyFriendsController extends GetxController {
               gameType: '象棋',
               onPressed: () {
                 Get.back(); // 关闭对话框
+                type = 'ChineseChessWithFriends';
                 Get.dialog(
                   Center(
                     child: Column(
@@ -93,61 +145,185 @@ class MyFriendsController extends GetxController {
                         buildSelectButton(
                           " 5 分钟场",
                           5,
-                          onTap: () {
-                            Get.toNamed(
-                              '/ChineseChessBoard',
-                              parameters: {
-                                'type': "ChineseChessWithFriends",
-                                'accountId': accountId,
-                                'gameTime': (5 * 60).toString(),
-                                "stepTime": 15.toString(),
-                              },
-                            );
+                          onTap: () async {
+                            Dio dio = Dio();
+                            try {
+                              final res = await dio.post(
+                                '${GlobalData.url}/SendInvitation',
+                                data: {
+                                  'accountId': accountId,
+                                  'invitation': {
+                                    'accountId':
+                                        GlobalData.userInfo['accountId'],
+                                    'type': type,
+                                    'gameTime': 5 * 60,
+                                    'stepTime': 15,
+                                  },
+                                },
+                              );
+                              if (res.data['code'] == 0) {
+                                print('发送邀请成功');
+                                Get.dialog(
+                                  ShowMessageDialog(content: '发送邀请成功'),
+                                  barrierDismissible: true,
+                                  barrierColor: Colors.transparent,
+                                );
+                                Future.delayed(Duration(seconds: 5), () {
+                                  Get.back();
+                                  Get.toNamed(
+                                    '/ChineseChessBoard',
+                                    parameters: {
+                                      'type': type,
+                                      'accountId': accountId,
+                                      'gameTime': (5 * 60).toString(),
+                                      "stepTime": 15.toString(),
+                                    },
+                                  );
+                                });
+                              } else {
+                                print('发送邀请失败,${res.data['msg']}');
+                              }
+                            } catch (e) {
+                              print(e);
+                            }
                           },
                         ),
                         buildSelectButton(
                           "10 分钟场",
                           10,
-                          onTap: () {
-                            Get.toNamed(
-                              '/ChineseChessBoard',
-                              parameters: {
-                                'type': "ChineseChessWithFriends",
-                                'accountId': accountId,
-                                'gameTime': (10 * 60).toString(),
-                                "stepTime": 30.toString(),
-                              },
-                            );
+                          onTap: () async {
+                            Dio dio = Dio();
+                            try {
+                              final res = await dio.post(
+                                '${GlobalData.url}/SendInvitation',
+                                data: {
+                                  'accountId': accountId,
+                                  'invitation': {
+                                    'accountId':
+                                        GlobalData.userInfo['accountId'],
+                                    'type': type,
+                                    'gameTime': 10 * 60,
+                                    'stepTime': 30,
+                                  },
+                                },
+                              );
+                              if (res.data['code'] == 0) {
+                                print('发送邀请成功');
+                                Get.dialog(
+                                  ShowMessageDialog(content: '发送邀请成功'),
+                                  barrierDismissible: true,
+                                  barrierColor: Colors.transparent,
+                                );
+                                Future.delayed(Duration(seconds: 2), () {
+                                  Get.back();
+                                  Get.toNamed(
+                                    '/ChineseChessBoard',
+                                    parameters: {
+                                      'type': "ChineseChessWithFriends",
+                                      'accountId': accountId,
+                                      'gameTime': (10 * 60).toString(),
+                                      "stepTime": 30.toString(),
+                                    },
+                                  );
+                                });
+                              } else {
+                                print('发送邀请失败,${res.data['msg']}');
+                              }
+                            } catch (e) {
+                              print(e);
+                            }
                           },
                         ),
                         buildSelectButton(
                           "15 分钟场",
                           15,
-                          onTap: () {
-                            Get.toNamed(
-                              '/ChineseChessBoard',
-                              parameters: {
-                                'type': "ChineseChessWithFriends",
-                                'accountId': accountId,
-                                'gameTime': (15 * 60).toString(),
-                                "stepTime": 60.toString(),
-                              },
-                            );
+                          onTap: () async {
+                            Dio dio = Dio();
+                            try {
+                              final res = await dio.post(
+                                '${GlobalData.url}/SendInvitation',
+                                data: {
+                                  'accountId': accountId,
+                                  'invitation': {
+                                    'accountId':
+                                        GlobalData.userInfo['accountId'],
+                                    'type': type,
+                                    'gameTime': 15 * 60,
+                                    'stepTime': 60,
+                                  },
+                                },
+                              );
+                              if (res.data['code'] == 0) {
+                                print('发送邀请成功');
+                                Get.dialog(
+                                  ShowMessageDialog(content: '发送邀请成功'),
+                                  barrierDismissible: true,
+                                  barrierColor: Colors.transparent,
+                                );
+                                Future.delayed(Duration(seconds: 1), () {
+                                  Get.back();
+                                  Get.toNamed(
+                                    '/ChineseChessBoard',
+                                    parameters: {
+                                      'type': "ChineseChessWithFriends",
+                                      'accountId': accountId,
+                                      'gameTime': (15 * 60).toString(),
+                                      "stepTime": 60.toString(),
+                                    },
+                                  );
+                                });
+                              } else {
+                                print('发送邀请失败,${res.data['msg']}');
+                              }
+                            } catch (e) {
+                              print(e);
+                            }
                           },
                         ),
                         buildSelectButton(
                           "20 分钟场",
                           20,
-                          onTap: () {
-                            Get.toNamed(
-                              '/ChineseChessBoard',
-                              parameters: {
-                                'type': "ChineseChessWithFriends",
-                                'accountId': accountId,
-                                'gameTime': (20 * 60).toString(),
-                                "stepTime": 60.toString(),
-                              },
-                            );
+                          onTap: () async {
+                            Dio dio = Dio();
+                            try {
+                              final res = await dio.post(
+                                '${GlobalData.url}/SendInvitation',
+                                data: {
+                                  'accountId': accountId,
+                                  'invitation': {
+                                    'accountId':
+                                        GlobalData.userInfo['accountId'],
+                                    'type': type,
+                                    'gameTime': 20 * 60,
+                                    'stepTime': 60,
+                                  },
+                                },
+                              );
+                              if (res.data['code'] == 0) {
+                                print('发送邀请成功');
+                                Get.dialog(
+                                  ShowMessageDialog(content: '发送邀请成功'),
+                                  barrierDismissible: true,
+                                  barrierColor: Colors.transparent,
+                                );
+                                Future.delayed(Duration(seconds: 1), () {
+                                  Get.back();
+                                  Get.toNamed(
+                                    '/ChineseChessBoard',
+                                    parameters: {
+                                      'type': "ChineseChessWithFriends",
+                                      'accountId': accountId,
+                                      'gameTime': (20 * 60).toString(),
+                                      "stepTime": 60.toString(),
+                                    },
+                                  );
+                                });
+                              } else {
+                                print('发送邀请失败,${res.data['msg']}');
+                              }
+                            } catch (e) {
+                              print(e);
+                            }
                           },
                         ),
                       ],
@@ -162,6 +338,8 @@ class MyFriendsController extends GetxController {
               gameType: '围棋',
               onPressed: () {
                 Get.back(); // 关闭对话框
+                type = "GoWithFriends";
+
                 // Get.toNamed(
                 //   // '/GoBoard',
                 //   '',
@@ -173,6 +351,7 @@ class MyFriendsController extends GetxController {
               gameType: '军棋',
               onPressed: () {
                 Get.back(); // 关闭对话框
+                type = "MilitaryWithFriends";
                 // Get.toNamed(
                 //   // '/MilitaryBoard',
                 //   '',
@@ -184,6 +363,7 @@ class MyFriendsController extends GetxController {
               gameType: '五子',
               onPressed: () {
                 Get.back(); // 关闭对话框
+                type = "FirWithFriends";
                 // Get.toNamed(
                 //   // '/FirBoard',
                 //   '',
@@ -217,12 +397,16 @@ class MyFriendsController extends GetxController {
         Get.dialog(
           ShowMessageDialog(content: '已删除好友'), // 显示消息对话框
         ); // 显示错误提示
+        Map<String, dynamic> delFriend = friends.firstWhere(
+          (element) => element['accountId'] == accountId,
+        ); // 查找要删除的好友
+        notAddFriends.add(delFriend); // 将好友添加到未添加的好友列表中
         friends.removeWhere(
           (friend) => friend['accountId'] == accountId,
         ); // 从列表中删除好友
         GlobalData.userInfo['friends'].removeWhere(
           (friend) => friend == accountId,
-        ); // 从全局数据中删除好友\
+        ); // 从全局数据中删除好友
       } else {
         Get.dialog(
           ShowMessageDialog(content: response.data['msg']), // 显示消息对话框
@@ -281,6 +465,10 @@ class MyFriendsController extends GetxController {
   }
 
   void accept({required String accountId}) async {
+    notAddFriends.removeWhere(
+      (stranger) =>
+          friends.any((friend) => friend['accountId'] == stranger['accountId']),
+    );
     Dio dio = Dio();
     Map<String, dynamic> params = {
       'myAccountId': GlobalData.userInfo['accountId'], // 我的账号ID
@@ -338,11 +526,15 @@ class MyFriendsController extends GetxController {
       if (response.data['code'] == 0) {
         Get.dialog(
           ShowMessageDialog(content: '已拒绝申请'), // 显示消息对话框
-        ); // 显示错误提示
+        );
+        requestFriends.removeWhere(
+          (friend) => friend['accountId'] == accountId,
+        ); // 从列表中删除好友
       } else {
+        // 显示错误提示
         Get.dialog(
           ShowMessageDialog(content: response.data['msg']), // 显示消息对话框
-        ); // 显示错误提示
+        );
       }
       Future.delayed(
         Duration(seconds: 1),
@@ -359,7 +551,13 @@ class MyFriendsController extends GetxController {
     print('search');
     final keyword = searchController.text.trim(); // 获取搜索关键字
     if (keyword.isEmpty) {
-      searchFriends.clear(); // 如果关键字为空，清空搜索结果列表
+      displayList.clear(); // 如果关键字为空，清空搜索结果列表
+      notAddFriends.removeWhere(
+        (stranger) => friends.any(
+          (friend) => friend['accountId'] == stranger['accountId'],
+        ),
+      );
+      displayList.addAll(notAddFriends); // 显示未添加的好友列表
       return;
     }
     Dio dio = Dio();
@@ -377,16 +575,20 @@ class MyFriendsController extends GetxController {
       print(response.data);
       if (response.data['code'] == 0) {
         print(response.data['data']);
-        searchFriends.clear(); // 清空搜索结果列表
+        displayList.clear(); // 清空搜索结果列表
         for (var friend in response.data['data']) {
           print(friend);
           if (friend['accountId'] != GlobalData.userInfo['accountId']) {
-            searchFriends.add(friend); // 添加搜索结果到列表中
+            displayList.add(friend); // 添加搜索结果到列表中
           }
         }
       }
     } catch (e) {
       print(e);
     }
+  }
+
+  Future<void> refreshFriends() async {
+    getFriends();
   }
 }

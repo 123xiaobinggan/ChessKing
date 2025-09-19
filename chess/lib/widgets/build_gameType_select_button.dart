@@ -52,6 +52,7 @@ class GameTypeSelectButton extends StatelessWidget {
                   fontSize: 18,
                   fontWeight: FontWeight.w600,
                   color: Colors.brown[800],
+                  decoration: TextDecoration.none,
                 ),
               ),
               

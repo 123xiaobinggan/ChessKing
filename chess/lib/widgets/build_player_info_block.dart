@@ -13,11 +13,15 @@ Widget buildPlayerInfoBlock({
   required bool isRed,
   required int totalTime,
   required int stepTime,
+  final Function()? onTap,
 }) {
-  final avatar = AnimatedAvatar(
-    imagePath: imagePath,
-    isMyTurn: isMyTurn,
-    isRed: isRed,
+  final avatar = GestureDetector(
+    onTap: onTap,
+    child: AnimatedAvatar(
+      imagePath: imagePath,
+      isMyTurn: isMyTurn,
+      isRed: isRed,
+    ),
   );
   // print('isMyturn: ${isMyTurn.value}');
   final info = Column(

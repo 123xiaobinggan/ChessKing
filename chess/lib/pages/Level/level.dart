@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '/widgets/build_stat_card.dart';
 import '/global/global_data.dart';
+import 'level_controller.dart';
 
 class Level extends StatelessWidget {
   Level({Key? key}) : super(key: key);
+  final LevelController controller = Get.find();
 
   // 辅助函数，用于安全获取嵌套值
   int safeGetInt(Map<String, dynamic>? map, String key) {
@@ -15,106 +17,6 @@ class Level extends StatelessWidget {
   String safeGetString(Map<String, dynamic>? map, String key) {
     return map?[key] as String? ?? '';
   }
-
-  final overviewStats = () {
-    final userInfo = GlobalData.userInfo.value;
-    final chineseChess = userInfo['ChineseChess'] as Map<String, dynamic>?;
-    final go = userInfo['Go'] as Map<String, dynamic>?;
-    final military = userInfo['military'] as Map<String, dynamic>?;
-    final fir = userInfo['Fir'] as Map<String, dynamic>?;
-
-    final totalWins =
-        (chineseChess?['win'] as int? ?? 0) +
-        (go?['win'] as int? ?? 0) +
-        (military?['win'] as int? ?? 0) +
-        (fir?['win'] as int? ?? 0);
-    final totalLosses =
-        (chineseChess?['lose'] as int? ?? 0) +
-        (go?['lose'] as int? ?? 0) +
-        (military?['lose'] as int? ?? 0) +
-        (fir?['lose'] as int? ?? 0);
-    final totalGames =
-        (chineseChess?['total'] as int? ?? 0) +
-        (go?['total'] as int? ?? 0) +
-        (military?['total'] as int? ?? 0) +
-        (fir?['total'] as int? ?? 0);
-    final draws = totalGames - totalWins - totalLosses;
-    final winRate = totalGames == 0
-        ? '0%'
-        : '${((totalWins / totalGames) * 100).toStringAsFixed(2)}%';
-
-    return {
-      'icon': 'assets/Level/overview.png',
-      '等级': '',
-      '胜局': totalWins,
-      '败局': totalLosses,
-      '和棋': draws,
-      '总局数': totalGames,
-      '胜率': winRate,
-    };
-  }();
-
-  final Map<String, Map<String, dynamic>> gameStats = () {
-    final userInfo = GlobalData.userInfo.value;
-    return {
-      '象棋': {
-        'icon': 'assets/Level/Chinese_chess.png',
-        '等级': userInfo['ChineseChess']?['level'] as String? ?? '1-1',
-        '胜局': userInfo['ChineseChess']?['win'] as int? ?? 0,
-        '败局': userInfo['ChineseChess']?['lose'] as int? ?? 0,
-        '和棋':
-            (userInfo['ChineseChess']?['total'] as int? ?? 0) -
-            (userInfo['ChineseChess']?['win'] as int? ?? 0) -
-            (userInfo['ChineseChess']?['lose'] as int? ?? 0),
-        '总局数': userInfo['ChineseChess']?['total'] as int? ?? 0,
-        '胜率': (userInfo['ChineseChess']?['total'] as int? ?? 0) == 0
-            ? '0%'
-            : '${((userInfo['ChineseChess']?['win'] as int? ?? 0) / (userInfo['ChineseChess']?['total'] as int? ?? 0) * 100).toStringAsFixed(2)}%',
-      },
-      '围棋': {
-        'icon': 'assets/Level/Go.png',
-        '等级': userInfo['Go']?['level'] as String? ?? '1-1',
-        '胜局': userInfo['Go']?['win'] as int? ?? 0,
-        '败局': userInfo['Go']?['lose'] as int? ?? 0,
-        '和棋':
-            (userInfo['Go']?['total'] as int? ?? 0) -
-            (userInfo['Go']?['win'] as int? ?? 0) -
-            (userInfo['Go']?['lose'] as int? ?? 0),
-        '总局数': userInfo['Go']?['total'] as int? ?? 0,
-        '胜率': (userInfo['Go']?['total'] as int? ?? 0) == 0
-            ? '0%'
-            : '${((userInfo['Go']?['win'] as int? ?? 0) / (userInfo['Go']?['total'] as int? ?? 0) * 100).toStringAsFixed(2)}%',
-      },
-      '军棋': {
-        'icon': 'assets/Level/military.png',
-        '等级': userInfo['military']?['level'] as String? ?? '1-1',
-        '胜局': userInfo['military']?['win'] as int? ?? 0,
-        '败局': userInfo['military']?['lose'] as int? ?? 0,
-        '和棋':
-            (userInfo['military']?['total'] as int? ?? 0) -
-            (userInfo['military']?['win'] as int? ?? 0) -
-            (userInfo['military']?['lose'] as int? ?? 0),
-        '总局数': userInfo['military']?['total'] as int? ?? 0,
-        '胜率': (userInfo['military']?['total'] as int? ?? 0) == 0
-            ? '0%'
-            : '${((userInfo['military']?['win'] as int? ?? 0) / (userInfo['military']?['total'] as int? ?? 0) * 100).toStringAsFixed(2)}%',
-      },
-      '五子棋': {
-        'icon': 'assets/Level/Fir.png',
-        '等级': userInfo['Fir']?['level'] as String? ?? '1-1',
-        '胜局': userInfo['Fir']?['win'] as int? ?? 0,
-        '败局': userInfo['Fir']?['lose'] as int? ?? 0,
-        '和棋':
-            (userInfo['Fir']?['total'] as int? ?? 0) -
-            (userInfo['Fir']?['win'] as int? ?? 0) -
-            (userInfo['Fir']?['lose'] as int? ?? 0),
-        '总局数': userInfo['Fir']?['total'] as int? ?? 0,
-        '胜率': (userInfo['Fir']?['total'] as int? ?? 0) == 0
-            ? '0%'
-            : '${((userInfo['Fir']?['win'] as int? ?? 0) / (userInfo['Fir']?['total'] as int? ?? 0) * 100).toStringAsFixed(2)}%',
-      },
-    };
-  }();
 
   @override
   Widget build(BuildContext context) {
@@ -162,36 +64,182 @@ class Level extends StatelessWidget {
           ],
         ),
       ),
-      body: Stack(
-        children: [
-          Positioned.fill(
-            child: Image.asset(
-              'assets/MyInfo/BackGround.png',
-              fit: BoxFit.cover,
+      body: Obx(() {
+        final overviewStats = _calculateOverviewStats();
+        final gameStats = _calculateGameStats();
+        return Stack(
+          children: [
+            Positioned.fill(
+              child: Image.asset(
+                'assets/MyInfo/BackGround.png',
+                fit: BoxFit.cover,
+              ),
             ),
-          ),
-          SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              children: [
-                buildStatCard(title: '总览', onTap: () {}, stats: overviewStats),
-                const SizedBox(height: 8),
-                ...gameStats.entries.map((entry) {
-                  return buildStatCard(
-                    title: entry.key,
-                    stats: entry.value,
-                    onTap: () {
-                      // TODO: 跳转历史页面，比如 Get.toNamed('/history/${entry.key}');
-                      print('进入 ${entry.key} 历史页面');
-                    },
-                  );
-                }).toList(),
-                const SizedBox(height: 80),
-              ],
-            ),
-          ),
-        ],
-      ),
+            if (controller.isLoading.value)
+              const Center(child: CircularProgressIndicator()),
+            if (!controller.isLoading.value)
+              SingleChildScrollView(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  children: [
+                    buildStatCard(
+                      title: '总览',
+                      onTap: () {
+                        print('进入总览历史页面');
+                        Get.toNamed(
+                          '/GameRecord',
+                          parameters: {
+                            'type': '总览',
+                            'accountId': controller.accountId,
+                          },
+                        );
+                      },
+                      stats: overviewStats,
+                    ),
+                    const SizedBox(height: 8),
+                    ...gameStats.entries.map((entry) {
+                      return buildStatCard(
+                        title: entry.key,
+                        stats: entry.value,
+                        onTap: () {
+                          Get.toNamed(
+                            '/GameRecord',
+                            parameters: {
+                              'type': translateType(entry.key),
+                              'accountId': controller.accountId,
+                            },
+                          );
+                          print('进入 ${entry.key} 历史页面');
+                        },
+                      );
+                    }).toList(),
+                    const SizedBox(height: 80),
+                  ],
+                ),
+              ),
+          ],
+        );
+      }),
     );
+  }
+
+  Map<String, dynamic> _calculateOverviewStats() {
+    final ChineseChess = controller.ChineseChess;
+    final Go = controller.Go;
+    final Military = controller.Military;
+    final Fir = controller.Fir;
+    print('ChineseChess,$ChineseChess');
+    final totalWins =
+        (ChineseChess?['win'] ?? 0) +
+        (Go?['win'] ?? 0) +
+        (Military?['win'] ?? 0) +
+        (Fir?['win'] ?? 0);
+    final totalLosses =
+        (ChineseChess?['lose'] ?? 0) +
+        (Go?['lose'] ?? 0) +
+        (Military?['lose'] ?? 0) +
+        (Fir?['lose'] ?? 0);
+    final totalGames =
+        (ChineseChess?['total'] ?? 0) +
+        (Go?['total'] ?? 0) +
+        (Military?['total'] ?? 0) +
+        (Fir?['total'] ?? 0);
+    final draws = totalGames - totalWins - totalLosses;
+    final winRate = totalGames == 0
+        ? '0.00%'
+        : '${((totalWins / totalGames) * 100).toStringAsFixed(2)}%';
+    print('总览:$totalWins,$totalLosses,$totalGames,$winRate');
+    return {
+      'icon': 'assets/Level/overview.png',
+      '等级': '',
+      '胜局': totalWins,
+      '败局': totalLosses,
+      '和棋': draws,
+      '总局数': totalGames,
+      '胜率': winRate,
+    };
+  }
+
+  Map<String, Map<String, dynamic>> _calculateGameStats() {
+    final userInfo = GlobalData.userInfo;
+    final ChineseChess = controller.ChineseChess;
+    final Go = controller.Go;
+    final Military = controller.Military;
+    final Fir = controller.Fir;
+    print('ChineseChess,$ChineseChess');
+    return {
+      '象棋': {
+        'icon': 'assets/Level/Chinese_chess.png',
+        '等级': ChineseChess?['level'] ?? '1-1',
+        '胜局': ChineseChess?['win'] ?? 0,
+        '败局': ChineseChess?['lose'] ?? 0,
+        '和棋':
+            (ChineseChess?['total'] ?? 0) -
+            (ChineseChess?['win'] ?? 0) -
+            (ChineseChess?['lose'] ?? 0),
+        '总局数': ChineseChess?['total'] ?? 0,
+        '胜率': (ChineseChess?['total'] ?? 0) == 0
+            ? '0%'
+            : '${((ChineseChess?['win'] ?? 0) / (ChineseChess?['total'] ?? 0) * 100).toStringAsFixed(2)}%',
+      },
+      '围棋': {
+        'icon': 'assets/Level/Go.png',
+        '等级': Go?['level'] as String? ?? '1-1',
+        '胜局': Go?['win'] as int? ?? 0,
+        '败局': Go?['lose'] as int? ?? 0,
+        '和棋':
+            (Go?['total'] as int? ?? 0) -
+            (Go?['win'] as int? ?? 0) -
+            (Go?['lose'] as int? ?? 0),
+        '总局数': Go?['total'] as int? ?? 0,
+        '胜率': (Go?['total'] as int? ?? 0) == 0
+            ? '0%'
+            : '${((Go?['win'] as int? ?? 0) / (userInfo['Go']?['total'] as int? ?? 0) * 100).toStringAsFixed(2)}%',
+      },
+      '军棋': {
+        'icon': 'assets/Level/military.png',
+        '等级': Military?['level'] as String? ?? '1-1',
+        '胜局': Military?['win'] as int? ?? 0,
+        '败局': Military?['lose'] as int? ?? 0,
+        '和棋':
+            (Military?['total'] as int? ?? 0) -
+            (Military?['win'] as int? ?? 0) -
+            (Military?['lose'] as int? ?? 0),
+        '总局数': Military?['total'] as int? ?? 0,
+        '胜率': (Military?['total'] as int? ?? 0) == 0
+            ? '0%'
+            : '${((Military?['win'] as int? ?? 0) / (userInfo['military']?['total'] as int? ?? 0) * 100).toStringAsFixed(2)}%',
+      },
+      '五子棋': {
+        'icon': 'assets/Level/Fir.png',
+        '等级': Fir?['level'] as String? ?? '1-1',
+        '胜局': Fir?['win'] as int? ?? 0,
+        '败局': Fir?['lose'] as int? ?? 0,
+        '和棋':
+            (Fir?['total'] as int? ?? 0) -
+            (Fir?['win'] as int? ?? 0) -
+            (Fir?['lose'] as int? ?? 0),
+        '总局数': Fir?['total'] as int? ?? 0,
+        '胜率': (Fir?['total'] as int? ?? 0) == 0
+            ? '0%'
+            : '${((Fir?['win'] as int? ?? 0) / (userInfo['Fir']?['total'] as int? ?? 0) * 100).toStringAsFixed(2)}%',
+      },
+    };
+  }
+
+  String translateType(String type) {
+    print('type:$type');
+    switch (type) {
+      case '象棋':
+        return 'ChineseChess';
+      case '围棋':
+        return 'Go';
+      case '军棋':
+        return 'military';
+      case '五子棋':
+        return 'Fir';
+      default:
+        return type;
+    }
   }
 }

@@ -182,7 +182,9 @@ class GameResultOverlay extends StatelessWidget {
             style: TextStyle(
               fontSize: 28,
               fontWeight: FontWeight.w900,
-              color: me['isRed'] ? Colors.red : Colors.blue,
+              color: (me['isRed'] is RxBool ? me['isRed'].value : me['isRed'])
+                  ? Colors.red
+                  : Colors.blue,
               shadows: [
                 Shadow(
                   color: Colors.orangeAccent.withOpacity(0.6),
@@ -199,7 +201,12 @@ class GameResultOverlay extends StatelessWidget {
             style: TextStyle(
               fontSize: 28,
               fontWeight: FontWeight.w900,
-              color: opponent['isRed'] ? Colors.red : Colors.blue,
+              color:
+                  (opponent['isRed'] is RxBool
+                      ? opponent['isRed'].value
+                      : opponent['isRed'])
+                  ? Colors.red
+                  : Colors.blue,
               shadows: [
                 Shadow(
                   color: Colors.orangeAccent.withOpacity(0.6),
@@ -312,11 +319,15 @@ class GameResultOverlay extends StatelessWidget {
                     // 我的头像
                     Column(
                       children: [
+                        // 第一个AnimatedAvatar组件
                         AnimatedAvatar(
                           imagePath: me['avatar'],
                           isMyTurn: RxBool(false),
-                          isRed: me['isRed'],
+                          isRed: me['isRed'] is RxBool
+                              ? me['isRed'].value
+                              : me['isRed'],
                         ),
+
                         Text(
                           me['username'] ?? '用户名',
                           style: TextStyle(
@@ -352,7 +363,7 @@ class GameResultOverlay extends StatelessWidget {
                         AnimatedAvatar(
                           imagePath: opponent['avatar'].value,
                           isMyTurn: RxBool(false),
-                          isRed: opponent['isRed'],
+                          isRed: opponent['isRed'].value,
                         ),
                         Text(
                           opponent['username'].value ?? '用户名',
@@ -387,7 +398,7 @@ class GameResultOverlay extends StatelessWidget {
   }
 }
 
-// 简单撕裂感裁剪器示例
+// 简单撕裂感裁剪器
 class TearClipper extends CustomClipper<Path> {
   @override
   Path getClip(Size size) {

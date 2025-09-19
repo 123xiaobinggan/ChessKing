@@ -37,6 +37,7 @@ class _AnimatedAvatarState extends State<AnimatedAvatar>
 
     // 监听 RxBool
     widget.isMyTurn.listen((value) {
+      if (!mounted) return;
       if (value) {
         _controller.repeat();
         print('动画开始');

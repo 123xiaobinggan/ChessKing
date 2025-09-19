@@ -7,7 +7,7 @@ plugins {
 
 android {
     namespace = "com.example.chess_app"
-    compileSdk = 35
+    compileSdk = 36
     ndkVersion = "27.0.12077973"
 
     compileOptions {
@@ -28,7 +28,7 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
-        minSdkVersion(23)
+        minSdkVersion(24)
         ndk {
             // 使用 add 方法设置 ABI 过滤
             abiFilters.add("armeabi-v7a")

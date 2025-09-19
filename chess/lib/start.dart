@@ -6,7 +6,6 @@ import 'pages/Enter/Login/login.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:dio/dio.dart'; // 导入 Dio 库
 import '/global/global_data.dart'; // 导入全局数据类
-import 'install.dart';
 import 'package:app_installer/app_installer.dart'; // 导入 AppInstaller 库
 
 class SplashPage extends StatefulWidget {
@@ -39,6 +38,7 @@ class _SplashPageState extends State<SplashPage>
       if (status == AnimationStatus.completed) {
         Future.delayed(const Duration(milliseconds: 500), () async {
           await checkUpdate();
+          
           Get.off(
             () => Login(),
             transition: Transition.fadeIn,
@@ -76,8 +76,8 @@ class _SplashPageState extends State<SplashPage>
     try {
       Dio dio = Dio();
       final response = await dio.get('${GlobalData.url}/GetVersion');
-      String latestVersion = response.data['data']['version'];
-      String url = response.data['data']['url'];
+      String latestVersion = response.data['version'];
+      String url = response.data['url'];
       print("最新版本: $latestVersion, 当前版本: $currentVersion, 下载地址: $url");
 
       if (currentVersion != latestVersion) {
@@ -137,7 +137,7 @@ class AppUpdater {
     Get.dialog(
       Obx(
         () => AlertDialog(
-          title: Text('正在下载更新\n下载需打开加速器', textAlign: TextAlign.center),
+          title: Text('正在下载更新\n请打开加速器', textAlign: TextAlign.center),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [

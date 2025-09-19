@@ -6,6 +6,7 @@ import FlutterMacOS
 import Foundation
 
 import app_installer
+import app_settings
 import firebase_core
 import firebase_messaging
 import package_info_plus
@@ -15,6 +16,7 @@ import video_player_avfoundation
 
 func RegisterGeneratedPlugins(registry: FlutterPluginRegistry) {
   AppInstallerPlugin.register(with: registry.registrar(forPlugin: "AppInstallerPlugin"))
+  AppSettingsPlugin.register(with: registry.registrar(forPlugin: "AppSettingsPlugin"))
   FLTFirebaseCorePlugin.register(with: registry.registrar(forPlugin: "FLTFirebaseCorePlugin"))
   FLTFirebaseMessagingPlugin.register(with: registry.registrar(forPlugin: "FLTFirebaseMessagingPlugin"))
   FPPPackageInfoPlusPlugin.register(with: registry.registrar(forPlugin: "FPPPackageInfoPlusPlugin"))

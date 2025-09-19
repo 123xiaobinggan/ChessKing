@@ -1,7 +1,6 @@
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import 'edit_controller.dart';
-import 'package:photo_view/photo_view.dart';
 import '/widgets/avatar_image.dart'; // 导入头像组件
 import '../AvatarPreview/avatar_preview.dart'; // 导入头像预览组件
 
@@ -52,6 +51,18 @@ class Edit extends StatelessWidget {
                   Get.back();
                 },
               ),
+              actions: [
+                IconButton(
+                  icon: Image.asset(
+                    'assets/MyInfo/Store.png',
+                    width: 24,
+                    height: 24,
+                  ),
+                  onPressed: () {
+                    Get.toNamed('/Recharge');
+                  },
+                ),
+              ],
             ),
           ],
         ),

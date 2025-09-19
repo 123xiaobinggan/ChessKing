@@ -4,12 +4,71 @@ import '/global/global_data.dart';
 import 'package:dio/dio.dart';
 import '/pages/Tabbar/tabbar_controller.dart';
 import 'package:get_storage/get_storage.dart';
-import '/pushManager.dart';
+import '../../../api/pushManager.dart';
+import 'dart:math';
 
 class LoginController extends GetxController {
   final accountIdController = TextEditingController();
   final passwordController = TextEditingController();
   final _storage = GetStorage();
+  static const List<String> sayings = [
+    "落子无悔大丈夫",
+    "棋路漫漫 有你相伴",
+    "棋场即战场",
+    "宁失一子 不失一先",
+    "乾坤未定 你我皆是黑马",
+    "一着不慎 满盘皆输",
+    "以棋会友",
+    "到乡翻似烂柯人",
+    "相见恨晚 旗鼓相当",
+    "一鼓作气 先发制人",
+    "君子一言 快马一鞭",
+    "兵者 诡道也",
+    "罗袜生尘 凌波微步",
+    "月之皎兮 佼人僚兮",
+    "闲敲棋子落灯花",
+    "日日思君不见君",
+    "白露横江 水光接天",
+    "雪压围棋石 风吹饮酒楼",
+    "玉作弹棋局 中心亦不平",
+    "恃强斯有失 守分固无侵",
+    "人间与世远 鸟语知境静",
+    "十分潋滟君休赤",
+    "易醉扶头酒 难逢敌手棋",
+    "诗酒琴棋客 风花雪月天",
+    "高田如楼梯,平田如棋局",
+    "一局残棋见六朝",
+    "雪拥蓝关马不前",
+    "将军置酒饮归客",
+    "男儿何不带吴钩",
+    "谈笑间 樯橹灰飞烟灭",
+    "实者虚之 虚者实之",
+  ];
+
+  static final List<List<Color>> gradients = [
+    [Color(0xFFFFD700), Color(0xFFFF8C00)],
+    [Color(0xFFFFDDE1), Color(0xFFFEC8D8)],
+    [Color(0xFFFF758C), Color(0xFFFF7EB3)],
+    [Color(0xFF8EC5FC), Color(0xFFE0C3FC)],
+    [Color(0xFFB2F7EF), Color(0xFF82EEDD)],
+    [Color(0xFFC3AED6), Color(0xFF736CED)],
+    [Color(0xFF667EEA), Color(0xFF764BA2)],
+    [Color(0xFF9966FF), Color(0xFF99CCFF)],
+    [Color(0xFF3399FF), Color(0xFF99CCFF)],
+    [Color(0xFF66CCFF), Color(0xFF99CCFF)],
+    [Color(0xFF6699FF), Color(0xFF99CCFF)],
+  ];
+
+  static final List<String> fontFamilies = [
+    "ZhiMangXing-Regular",
+    "MaShanZheng-Regular",
+    "YunFengJingLong",
+    "XiaoJiaoWenXun",
+    "XiaWuZhenKai",
+    "SanJi",
+    "QianDu",
+    "LinHaiDiShu",
+  ];
 
   @override
   void onInit() {
@@ -23,9 +82,16 @@ class LoginController extends GetxController {
       print('password,${passwordController.text}');
     }
     if (accountIdController.text.isNotEmpty &&
-        passwordController.text.isNotEmpty) {
+        passwordController.text.isNotEmpty &&
+        GlobalData.userInfo['accountId'] == '') {
       login();
     }
+  }
+
+  static int changeFont() {
+    int fontIndex =  Random().nextInt(fontFamilies.length);
+    print('fontIndex,$fontIndex');
+    return fontIndex;
   }
 
   void login() async {
@@ -65,18 +131,12 @@ class LoginController extends GetxController {
         PushManager.handlePendingAfterLogin();
         Get.back();
         GlobalData.userInfo = RxMap<String, dynamic>(response.data['data']);
-        resolveIp();
         print(GlobalData.userInfo);
         Get.snackbar(
           '登录成功',
           '欢迎回来，${GlobalData.userInfo['username']}',
           snackPosition: SnackPosition.TOP,
         );
-        if (Get.isRegistered<TabbarController>()) {
-          Get.find<TabbarController>().currentIndex.value = 0;
-        } else {
-          Get.put(TabbarController());
-        }
         Get.offNamed('/Tabbar');
       } else {
         Get.back();
@@ -92,48 +152,6 @@ class LoginController extends GetxController {
       print('Error: $e');
       Get.snackbar('登录失败', '网络错误', snackPosition: SnackPosition.BOTTOM);
       return;
-    }
-  }
-
-  void resolveIp() async {
-    const host =
-        "https://ipcity.market.alicloudapi.com"; // 请求地址 支持http 和 https 及 WEBSOCKET
-    const path = "/ip/city/query"; // 后缀
-    const appCode = "1dc84a4fe7fc40238d1a17ad665c59d3";
-    // 构建查询参数
-    String querys = 'ip=${GlobalData.userInfo['ip']}&coordsys=WGS84';
-    String urlSend = '$host$path?$querys'; // 拼接完整请求链接
-    print('urlSend, $urlSend');
-    var dio = Dio(); // 初始化dio对象
-    try {
-      final res = await dio.get(
-        urlSend, // 发送请求参数
-        options: Options(
-          headers: {
-            'Authorization': 'APPCODE $appCode', // 鉴权信息
-          },
-        ),
-      );
-      print('res.data, ${res.data}');
-      if (res.statusCode == 200) {
-        if (res.data['code'] == 200) {
-          String city = '未知';
-          if (res.data['data']['result']['city'] != '') {
-            city = res.data['data']['result']['city'];
-          } else if (res.data['data']['result']['prov'] != '') {
-            city = res.data['data']['result']['province'];
-          } else if (res.data['data']['result']['country'] != '') {
-            city = res.data['data']['result']['country'];
-          } else if (res.data['data']['result']['continuent'] != '') {
-            city = res.data['data']['result']['continent'];
-          }
-          GlobalData.userInfo['ip'] = city;
-          print('city, $city');
-        }
-      }
-    } catch (e) {
-      print(e); // 打印错误信息
-      GlobalData.userInfo['ip'] = '未知';
     }
   }
 

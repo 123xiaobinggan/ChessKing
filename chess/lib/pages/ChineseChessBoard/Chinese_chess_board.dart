@@ -8,7 +8,6 @@ import '/widgets/speech_bubble.dart';
 import '/widgets/Chinese_chess_board_piece.dart';
 import '/widgets/confirm_dialog.dart';
 
-
 class ChineseChessBoard extends StatelessWidget {
   ChineseChessBoard({super.key});
 
@@ -22,12 +21,12 @@ class ChineseChessBoard extends StatelessWidget {
         int.tryParse(Get.parameters['gameTime'] ?? '900') ?? 900;
     controller.stepTime.value =
         int.tryParse(Get.parameters['stepTime'] ?? '60') ?? 60;
-    controller.roomId = Get.parameters['roomId'] ?? '';
-    print('roomId:${controller.roomId}');
+    controller.aiLevel = Get.parameters['aiLevel'] ?? '初级';
     print('type:${controller.type}');
     print('opponentAccountId:${Get.parameters['accountId']}');
     print('gameTime:${controller.gameTime.value}');
     print('stepTime:${controller.stepTime.value}');
+    print('AiLevel:${controller.aiLevel}');
     return PopScope(
       canPop: false,
       child: Scaffold(
@@ -112,41 +111,57 @@ class ChineseChessBoard extends StatelessWidget {
                 left: 16,
                 child: Obx(
                   () => buildPlayerInfoBlock(
-                    username: controller.playInfo['opponent']['username'].value,
+                    username:
+                        controller.playInfo['opponent']?['username']?.value ??
+                        '',
                     accountId:
-                        controller.playInfo['opponent']['accountId'].value,
-                    level: controller.playInfo['opponent']['level'].value,
+                        controller.playInfo['opponent']?['accountId']?.value ??
+                        '',
+                    level:
+                        controller.playInfo['opponent']?['level']?.value ?? '',
                     isMyTurn: controller.playInfo['opponent']['myTurn'],
-                    imagePath: controller
-                        .playInfo['opponent']['avatar']
-                        .value, // 替换为你的头像路径
-                    isRed: controller
-                        .playInfo['opponent']['isRed'], // 设置为 false 表示不是我方
-                    totalTime: controller
-                        .playInfo['opponent']['remaining_time']
-                        .value, // 总时间
-                    stepTime: controller.opponentStepTime.value, // 步长时间
+
+                    imagePath:
+                        controller.playInfo['opponent']?['avatar']?.value ??
+                        'https://binggan-1358387153.cos.ap-guangzhou.myqcloud.com/User/NotLogin.png',
+                    isRed:
+                        controller.playInfo['opponent']?['isRed']?.value ??
+                        false,
+                    totalTime:
+                        controller.playInfo['opponent']?['timeLeft']?.value ??
+                        0,
+                    stepTime: controller.opponentStepTime.value,
+                    onTap: () {
+                      controller.showPersonalInfo(
+                        controller.playInfo['opponent']?['accountId']?.value,
+                      );
+                    },
                   ),
                 ),
               ),
 
-              // 我的头像（左下角）
+              // // 我的头像（左下角）
               Positioned(
                 bottom: 16,
                 right: 16,
                 child: Obx(
                   () => buildPlayerInfoBlock(
-                    username: controller.playInfo['me']['username'] ?? '',
-                    accountId: controller.playInfo['me']['accountId'] ?? '',
-                    level: controller.playInfo['me']['level'] ?? '',
+                    username: controller.playInfo['me']?['username'] ?? '',
+                    accountId: controller.playInfo['me']?['accountId'] ?? '',
+                    level: controller.playInfo['me']?['level'] ?? '',
                     isMyTurn: controller.playInfo['me']['myTurn'],
-                    imagePath: controller.playInfo['me']['avatar'], // 替换为你的头像路径
-                    isRed:
-                        controller.playInfo['me']['isRed'], // 设置为 false 表示不是我方
-                    totalTime: controller
-                        .playInfo['me']['remaining_time']
-                        .value, // 总时间
-                    stepTime: controller.myStepTime.value, // 步长时间
+                    imagePath:
+                        controller.playInfo['me']['avatar'] ??
+                        'https://binggan-1358387153.cos.ap-guangzhou.myqcloud.com/User/NotLogin.png',
+                    isRed: controller.playInfo['me']['isRed'].value,
+                    totalTime:
+                        controller.playInfo['me']?['timeLeft']?.value ?? 0,
+                    stepTime: controller.myStepTime.value,
+                    onTap: () {
+                      controller.showPersonalInfo(
+                        controller.playInfo['me']?['accountId'],
+                      );
+                    },
                   ),
                 ),
               ),
@@ -194,7 +209,7 @@ class ChineseChessBoard extends StatelessWidget {
                 child: Container(
                   padding: const EdgeInsets.only(bottom: 40.0), // 增加内边距
                   margin: const EdgeInsets.only(bottom: 10),
-                  child: ChineseChessBoardWithPieces(), // 你的棋盘组件
+                  child: ChineseChessBoardWithPieces(),
                 ),
               ),
 

@@ -23,34 +23,6 @@ class ChineseChessBoardWithPieces extends StatelessWidget {
         final boardHeight = boardWidth * 10 / 9;
 
         return GestureDetector(
-          onTapDown: (details) {
-            final tapPos = details.localPosition;
-
-            // 判断点击是否是可移动点
-            final isValid = controller.availableMove.any((p) {
-              final targetLeft = p.col * boardWidth * 0.88 / 8 + 3 + 20 / 1.414;
-              final targetTop = p.row * boardHeight * 0.90 / 9 + 1 + 20 / 1.414;
-              final targetCenter = Offset(targetLeft, targetTop);
-
-              return (tapPos - targetCenter).distance <= 15; // 容差范围
-            });
-
-            if (isValid) {
-              // 找到目标点并移动
-              final moveTarget = controller.availableMove.firstWhere((p) {
-                final targetLeft =
-                    p.col * boardWidth * 0.88 / 8 + 3 + 20 / 1.414;
-                final targetTop =
-                    p.row * boardHeight * 0.90 / 9 + 1 + 20 / 1.414;
-                final targetCenter = Offset(targetLeft, targetTop);
-                return (tapPos - targetCenter).distance <= 15;
-              });
-              controller.moveSelectedPiece(moveTarget.row, moveTarget.col);
-            } else {
-              // 非可行位置 → 飞过去再飞回来
-              // controller.flyToTemp(tapPos, boardWidth, boardHeight);
-            }
-          },
           child: SizedBox(
             width: boardWidth,
             height: boardHeight,
@@ -301,12 +273,6 @@ class ChineseChessBoardWithPieces extends StatelessWidget {
                 Positioned.fill(
                   child: CheckmateAlert(
                     isInCheckMateNotifier: controller.isInCheckMateNotifier,
-                    onClose: () => controller.overGame(
-                      controller.playInfo['opponent']['myTurn'].value == true
-                          ? '胜'
-                          : '败',
-                      'checkmate',
-                    ),
                   ),
                 ),
               ],

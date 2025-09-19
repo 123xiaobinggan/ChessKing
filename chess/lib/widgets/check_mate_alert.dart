@@ -3,8 +3,10 @@ import 'dart:math';
 
 class CheckmateAlert extends StatefulWidget {
   final ValueNotifier<bool> isInCheckMateNotifier;
-  final void Function() onClose;
-  const CheckmateAlert({super.key, required this.isInCheckMateNotifier, required this. onClose});
+  const CheckmateAlert({
+    super.key,
+    required this.isInCheckMateNotifier,
+  });
 
   @override
   State<CheckmateAlert> createState() => _CheckmateAlertState();
@@ -65,7 +67,6 @@ class _CheckmateAlertState extends State<CheckmateAlert>
     await Future.delayed(Duration(milliseconds: 300));
     widget.isInCheckMateNotifier.value = false;
     _reset();
-    widget.onClose();
   }
 
   void _reset() {
@@ -118,7 +119,6 @@ class _CheckmateAlertState extends State<CheckmateAlert>
                 child: AnimatedBuilder(
                   animation: _swordController,
                   builder: (context, _) {
-                    
                     final curvedAnim = CurvedAnimation(
                       parent: _swordController,
                       curve: Curves.easeInBack,

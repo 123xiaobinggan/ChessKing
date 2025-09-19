@@ -23,10 +23,19 @@ exports.main = async (event, context) => {
             return { code: 1, msg: '未找到对应的用户信息' };
         }
 
-        if (userDoc.data[0]['friends'].includes(myAccountId)) {
+        const userData = userDoc.data[0];
+        // 确保 friends 和 requestFriends 字段存在，不存在则初始化为空数组
+        if (!userData.friends) {
+            userData.friends = [];
+        }
+        if (!userData.requestFriends) {
+            userData.requestFriends = [];
+        }
+
+        if (userData.friends.includes(myAccountId)) {
             return { code: 1, msg: '已经是好友' };
         }
-        if (userDoc.data[0]['requestFriends'].includes(myAccountId)) {
+        if (userData.requestFriends.includes(myAccountId)) {
             return { code: 1, msg: '已经发送过好友请求' };
         }
         const res = await userCollection.doc(userDoc.data[0]._id).update({

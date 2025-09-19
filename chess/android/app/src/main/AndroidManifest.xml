@@ -14,6 +14,7 @@
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE"/>
     <uses-permission android:name="android.permission.READ_PHONE_STATE"/>
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
 
     <!-- targetSdk >= 33 必须 -->
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
@@ -35,22 +36,68 @@
 
             <meta-data
                 android:name="io.flutter.embedding.android.NormalTheme"
-                android:resource="@style/NormalTheme"/>
+                android:resource="@style/NormalTheme" />
 
+            <!-- 启动入口 -->
             <intent-filter>
-                <action android:name="android.intent.action.MAIN"/>
-                <category android:name="android.intent.category.LAUNCHER"/>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+
+            <!-- 🔑 点击通知时要能路由到 MainActivity -->
+            <intent-filter>
                 <action android:name="cn.jpush.android.intent.NOTIFICATION_OPENED"/>
                 <category android:name="android.intent.category.DEFAULT"/>
             </intent-filter>
         </activity>
+
+        <!-- JPush Receiver -->
+        <receiver
+            android:name="cn.jpush.android.service.PushReceiver"
+            android:enabled="true"
+            android:exported="true"
+            tools:replace="android:exported">
+            <intent-filter>
+                <action android:name="cn.jpush.android.intent.REGISTRATION" />
+                <action android:name="cn.jpush.android.intent.MESSAGE_RECEIVED" />
+                <action android:name="cn.jpush.android.intent.NOTIFICATION_RECEIVED" />
+                <action android:name="cn.jpush.android.intent.NOTIFICATION_OPENED" />
+                <action android:name="cn.jpush.android.intent.CONNECTION" />
+                <category android:name="${applicationId}" />
+            </intent-filter>
+        </receiver>
+
+        <!-- JPush PushService（运行在 pushcore 进程，确保后台能收到推送） -->
+        <service
+            android:name="cn.jpush.android.service.PushService"
+            android:enabled="true"
+            android:exported="true"
+            android:process=":pushcore"
+            tools:replace="android:exported">
+            <intent-filter>
+                <action android:name="cn.jpush.android.intent.PUSH_SERVICE" />
+            </intent-filter>
+        </service>
+
+        <!-- JPush 辅助组件 -->
+        <service
+            android:name="cn.jpush.android.service.DownloadProvider"
+            android:enabled="true"
+            android:exported="false" />
+
+        <provider
+            android:name="cn.jpush.android.service.DataProvider"
+            android:authorities="${applicationId}.JPUSH_PROVIDER"
+            android:exported="true"
+            tools:replace="android:authorities,android:exported" />
+
 
         <!-- Flutter 必须 -->
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
 
-        <!-- 极光推送 AppKey / Channel，必须写，并加 tools:replace 防止冲突 -->
+        <!-- 极光推送 AppKey / Channel -->
         <meta-data
             android:name="JPUSH_APPKEY"
             android:value="74dacc1e2e26774220395b0e"
@@ -61,14 +108,15 @@
             android:value="developer-default"
             tools:replace="android:value"/>
 
-         <provider
+        <!-- FileProvider -->
+        <provider
             android:name="androidx.core.content.FileProvider"
-            android:authorities="${applicationId}.fileProvider"  
+            android:authorities="${applicationId}.fileProvider"
             android:exported="false"
             android:grantUriPermissions="true">
-        <meta-data
-            android:name="android.support.FILE_PROVIDER_PATHS"
-            android:resource="@xml/file_paths" />
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
         </provider>
 
     </application>

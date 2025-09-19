@@ -16,6 +16,10 @@ import '../bindings/Chinese_chess_match.dart';
 import '../bindings/Chinese_chess_rank.dart';
 import '../bindings/Chinese_chess_challenge.dart';
 import '../bindings/Chinese_chess_board.dart';
+import '../bindings/recharge.dart';
+import '../bindings/game_record.dart';
+import '../bindings/game_replay.dart';
+
 import '../../pages/Version/version.dart';
 import '../../pages/Enter/Login/login.dart';
 import '../../pages/Enter/Register/register.dart';
@@ -27,7 +31,9 @@ import '../../pages/ChineseChessMatch/Chinese_chess_match.dart';
 import '../../pages/ChineseChessRank/Chinese_chess_rank.dart';
 import '../../pages/ChineseChessChallenge/Chinese_chess_challenge.dart';
 import '../../pages/ChineseChessBoard/chinese_chess_board.dart';
-
+import '../../pages/Recharge/recharge.dart';
+import '../../pages/GameRecord/game_record.dart';
+import '../../pages/GameReplay/game_replay.dart';
 
 class AppRoutes {
   static final Login = "/";
@@ -44,6 +50,9 @@ class AppRoutes {
   static final ChineseChessRank = "/ChineseChessRank";
   static final ChineseChessChallenge = "/ChineseChessChallenge";
   static final ChineseChessBoard = "/ChineseChessBoard";
+  static final Recharge = "/Recharge";
+  static final GameRecord = "/GameRecord";
+  static final GameReplay = "/GameReplay";
 }
 
 class AppPages {
@@ -113,7 +122,21 @@ class AppPages {
       name: AppRoutes.ChineseChessBoard,
       page: () => ChineseChessBoard(),
       binding: ChineseChessBoardBindings(),
-      
-    )
+    ),
+    GetPage(
+      name: AppRoutes.Recharge,
+      page: () => Recharge(),
+      binding: RechargeBindings(),
+    ),
+    GetPage(
+      name: AppRoutes.GameRecord,
+      page: () => GameRecord(),
+      binding: GameRecordBindings(),
+    ),
+    GetPage(
+      name: AppRoutes.GameReplay,
+      page: () => GameReplay(),
+      binding: GameReplayBindings(),
+    ),
   ];
 }
