@@ -38,7 +38,7 @@ class _SplashPageState extends State<SplashPage>
       if (status == AnimationStatus.completed) {
         Future.delayed(const Duration(milliseconds: 500), () async {
           await checkUpdate();
-          
+
           Get.off(
             () => Login(),
             transition: Transition.fadeIn,
@@ -75,9 +75,10 @@ class _SplashPageState extends State<SplashPage>
 
     try {
       Dio dio = Dio();
-      final response = await dio.get('${GlobalData.url}/GetVersion');
-      String latestVersion = response.data['version'];
-      String url = response.data['url'];
+      final response = await dio.post('${GlobalData.url}/GetVersion');
+      print('response: ${response.data}');
+      String latestVersion = response.data['data']['version'];
+      String url = response.data['data']['url'];
       print("最新版本: $latestVersion, 当前版本: $currentVersion, 下载地址: $url");
 
       if (currentVersion != latestVersion) {
