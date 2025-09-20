@@ -1,5 +1,6 @@
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 import 'dart:async';
+import '../global/global_data.dart'; // 存储全局数据
 
 class SocketService {
   static final SocketService _instance = SocketService._internal();
@@ -8,15 +9,31 @@ class SocketService {
 
   IO.Socket? _socket;
 
+  Timer? _heartbeatTimer; // 心跳定时器
+
+  String? _roomId = '';
+  String? _accountId = GlobalData.userInfo['accountId'];
+
   // ---- 事件流 ----
   StreamController<Map<String, dynamic>>? _moveController;
-  Stream<Map<String, dynamic>> get onMove => _moveController?.stream ?? const Stream.empty();
+  Stream<Map<String, dynamic>> get onMove =>
+      _moveController?.stream ?? const Stream.empty();
 
   StreamController<Map<String, dynamic>>? _matchSuccessController;
-  Stream<Map<String, dynamic>> get onMatchSuccess => _matchSuccessController?.stream ?? const Stream.empty();
+  Stream<Map<String, dynamic>> get onMatchSuccess =>
+      _matchSuccessController?.stream ?? const Stream.empty();
 
   StreamController<dynamic>? _waitingController;
-  Stream<dynamic> get onWaiting => _waitingController?.stream ?? const Stream.empty();
+  Stream<dynamic> get onWaiting =>
+      _waitingController?.stream ?? const Stream.empty();
+
+  StreamController<dynamic>? _opponentPongController;
+  Stream<dynamic> get onOpponentPong =>
+      _opponentPongController?.stream ?? const Stream.empty();
+
+  StreamController<dynamic>? _reconnectController;
+  Stream<dynamic> get onReconnect =>
+      _reconnectController?.stream ?? const Stream.empty();
 
   // ---- 初始化连接 ----
   void initSocket() {
@@ -28,30 +45,52 @@ class SocketService {
     // 重新创建 StreamController 实例
     _moveController?.close();
     _moveController = StreamController<Map<String, dynamic>>.broadcast();
-    
+
     _matchSuccessController?.close();
-    _matchSuccessController = StreamController<Map<String, dynamic>>.broadcast();
-    
+    _matchSuccessController =
+        StreamController<Map<String, dynamic>>.broadcast();
+
     _waitingController?.close();
     _waitingController = StreamController<dynamic>.broadcast();
+
+    _reconnectController?.close();
+    _reconnectController = StreamController<dynamic>.broadcast();
 
     _socket = IO.io(
       'http://120.48.156.237:3000',
       IO.OptionBuilder()
-          .setTransports(['websocket', 'polling'])
-          .disableAutoConnect()
-          .setReconnectionDelay(2000)
-          .setReconnectionAttempts(5)
+          .setTransports(['websocket'])
+          .setReconnectionAttempts(20) // 最多重连 20 次
+          .setReconnectionDelay(2000) // 每次间隔 2 秒
           .build(),
     );
 
     // --- 基础事件 ---
     _socket?.onConnect((_) {
       print("✅ Socket 已连接: ${_socket?.id}");
+      _accountId = GlobalData.userInfo['accountId'];
+      print('accountId,$_accountId');
+      if (_roomId != '') {
+        reconnectRoom();
+      }
+      _startHeartbeat(); // ✅ 开始心跳
     });
 
     _socket?.onDisconnect((_) {
       print("❌ Socket 已断开");
+      _stopHeartbeat(); // 停止心跳
+    });
+
+    _socket?.onReconnect((attempt) {
+      print("🔄 正在重连... 第 $attempt 次");
+    });
+
+    _socket?.onReconnectError((err) {
+      print("⚠️ 重连错误: $err");
+    });
+
+    _socket?.onReconnectFailed((_) {
+      print("❌ 重连失败，放弃尝试");
     });
 
     _socket?.onConnectError((err) {
@@ -63,10 +102,16 @@ class SocketService {
     });
 
     // --- 业务事件 ---
+    _socket?.on('reconnectRoom', (data) {
+      print("🔄 重新连接房间: $data");
+    });
+
     _socket?.on('match_success', (data) {
       print("🎯 匹配成功: $data");
       if (_matchSuccessController?.isClosed == false) {
         _matchSuccessController?.add(Map<String, dynamic>.from(data));
+        _roomId = data['roomId']; // 更新房间 ID
+        print('roomId,$_roomId,$_accountId');
       }
     });
 
@@ -85,6 +130,18 @@ class SocketService {
       print("♟ 对手落子: $data");
       if (data is Map && _moveController?.isClosed == false) {
         _moveController?.add(Map<String, dynamic>.from(data));
+      }
+    });
+
+    // --- 心跳响应 ---
+    _socket?.on('pong', (_) {
+      print("❤️ 心跳回应");
+    });
+
+    _socket?.on('opponentPong', (_) {
+      print("❤️ 对手心跳回应");
+      if (_opponentPongController?.isClosed == false) {
+        _opponentPongController?.add(true); // 发送空数据
       }
     });
 
@@ -122,30 +179,56 @@ class SocketService {
     }
   }
 
+  // ---- 心跳逻辑 ----
+  void _startHeartbeat() {
+    _heartbeatTimer?.cancel();
+    _heartbeatTimer = Timer.periodic(const Duration(seconds: 5), (_) {
+      if (_socket != null && _socket!.connected) {
+        print("💓 发送心跳 ping");
+        _socket!.emit('ping');
+      }
+    });
+  }
+
+  void _stopHeartbeat() {
+    _heartbeatTimer?.cancel();
+    _heartbeatTimer = null;
+  }
+
+  void reconnectRoom() {
+    print("🔄 reconnectRoom重新连接房间,${_roomId},${_accountId}");
+    _socket?.emit('reconnectRoom', {
+      'roomId': _roomId,
+      'accountId': _accountId,
+    });
+  }
+
   // ---- 销毁 ----
   void dispose() {
     print("🧹 销毁 SocketService");
+
+    _stopHeartbeat();
 
     // 取消所有事件监听
     _socket?.off('waiting');
     _socket?.off('move');
     _socket?.off('match_success');
     _socket?.off('match_error');
+    _socket?.off('pong');
     _socket?.offAny();
 
-    // 不再关闭 StreamController，而是将它们设为 null
     _moveController?.close();
     _moveController = null;
-    
+
     _matchSuccessController?.close();
     _matchSuccessController = null;
-    
+
     _waitingController?.close();
     _waitingController = null;
 
-    // 断开连接
     _socket?.disconnect();
     _socket?.dispose();
     _socket = null;
+    _roomId = '';
   }
 }

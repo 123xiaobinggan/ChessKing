@@ -20,6 +20,7 @@ class GlobalData extends GetxController {
     "Fir": {'level': '1-1', 'total': 0, 'win': 0, 'lose': 0},
   }.obs;
   static var rid = '';
+  static Map<dynamic, dynamic>? version;
   static Map<dynamic, dynamic>? pendingNotification;
   static bool isLoggedIn = false;
 }

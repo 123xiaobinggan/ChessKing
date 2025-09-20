@@ -124,31 +124,46 @@ class ChineseChessBoardWithPieces extends StatelessWidget {
                           ),
 
                           // 绿色可移动点
-                          ...controller.availableMove.map(
-                            (p) => Positioned(
-                              left:
-                                  p.col * boardWidth * 0.88 / 8 +
-                                  1.6 +
-                                  20 / 1.414,
-                              top:
-                                  p.row * boardHeight * 0.889 / 9 +
-                                  1.5 +
-                                  20 / 1.414,
+                          ...controller.availableMove.map((p) {
+                            const double visualSize = 12; // 视觉圈圈大小
+                            const double hitSize = 40; // 点击范围大小
+
+                            // 原本计算的位置 (针对视觉圈圈的左上角)
+                            final left =
+                                p.col * boardWidth * 0.88 / 8 +
+                                1.6 +
+                                20 / 1.414;
+                            final top =
+                                p.row * boardHeight * 0.889 / 9 +
+                                1.5 +
+                                20 / 1.414;
+
+                            return Positioned(
+                              // 调整偏移：让大区域的中心对齐小圈圈的中心
+                              left: left - (hitSize - visualSize) / 2,
+                              top: top - (hitSize - visualSize) / 2,
                               child: GestureDetector(
+                                behavior: HitTestBehavior.translucent,
                                 onTap: () {
                                   controller.moveSelectedPiece(p.row, p.col);
                                 },
                                 child: Container(
-                                  width: 12,
-                                  height: 12,
-                                  decoration: BoxDecoration(
-                                    color: Colors.green,
-                                    shape: BoxShape.circle,
+                                  width: hitSize,
+                                  height: hitSize,
+                                  alignment: Alignment.center, // 保证小圈圈居中
+                                  color: Colors.transparent,
+                                  child: Container(
+                                    width: visualSize,
+                                    height: visualSize,
+                                    decoration: BoxDecoration(
+                                      color: Colors.green,
+                                      shape: BoxShape.circle,
+                                    ),
                                   ),
                                 ),
                               ),
-                            ),
-                          ),
+                            );
+                          }),
                         ],
                       );
 

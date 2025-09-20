@@ -7,6 +7,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:dio/dio.dart'; // 导入 Dio 库
 import '/global/global_data.dart'; // 导入全局数据类
 import 'package:app_installer/app_installer.dart'; // 导入 AppInstaller 库
+import 'package:path_provider/path_provider.dart';
 
 class SplashPage extends StatefulWidget {
   const SplashPage({super.key});
@@ -80,7 +81,7 @@ class _SplashPageState extends State<SplashPage>
       String latestVersion = response.data['data']['version'];
       String url = response.data['data']['url'];
       print("最新版本: $latestVersion, 当前版本: $currentVersion, 下载地址: $url");
-
+      GlobalData.version = response.data['data'];
       if (currentVersion != latestVersion) {
         print("需要更新");
         Future.microtask(() {
@@ -123,8 +124,9 @@ class _SplashPageState extends State<SplashPage>
 class AppUpdater {
   /// 下载并安装 apk
   static Future<void> downloadAndInstallApk(String url) async {
-    final dir = Directory("/storage/emulated/0/Download");
-    if (!dir.existsSync()) {
+    final dir = await getExternalStorageDirectory(); // 应用专属目录
+    
+    if (!dir!.existsSync()) {
       dir.createSync(recursive: true);
     }
 

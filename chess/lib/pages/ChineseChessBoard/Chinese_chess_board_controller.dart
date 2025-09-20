@@ -137,6 +137,18 @@ class ChineseChessBoardController extends GetxController {
         }
       }
     });
+
+    socketService.onReconnect.listen((data) {
+      print('onReconnect重新连接,$data');
+      if (data['status'] == "finished") {
+        overGame(data['result']['winner'], data['result']['reason']);
+        return;
+      }
+      if(data['moves'].length > moves.length){
+        print('moves,${moves.length}');
+        getOpponentMove(data['moves'][moves.length]);
+      }
+    });
   }
 
   @override

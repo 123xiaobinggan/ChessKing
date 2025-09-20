@@ -69,50 +69,54 @@ class Version extends StatelessWidget {
               borderRadius: BorderRadius.circular(16), // 圆角
             ),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(height: 20),
-                Text(
-                  "当前版本：v${controller.version}",
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.brown,
-                  ),
-                ),
-                const SizedBox(height: 20),
-                const Text(
-                  "更新内容：",
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.brown,
-                  ),
-                ),
-                const SizedBox(height: 10),
-                ...controller.changelog.map(
-                  (log) => Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 4),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          "• ",
-                          style: TextStyle(fontSize: 16, color: Colors.black87),
-                        ),
-                        Expanded(
-                          child: Text(
-                            log,
-                            style: const TextStyle(fontSize: 16),
-                          ),
-                        ),
-                      ],
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 20),
+                  Text(
+                    "当前版本：v${controller.version}",
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.brown,
                     ),
                   ),
-                ),
-              ],
+                  const SizedBox(height: 20),
+                  const Text(
+                    "更新内容：",
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.brown,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  ...controller.changelog.map(
+                    (log) => Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 4),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            "• ",
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: Colors.black87,
+                            ),
+                          ),
+                          Expanded(
+                            child: Text(
+                              log,
+                              style: const TextStyle(fontSize: 16),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
+          
         ],
       ),
     );
