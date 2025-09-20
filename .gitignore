@@ -6,3 +6,5 @@ package.json
 .idea
 .vscode
 functions
+test.js
+test_server.js
