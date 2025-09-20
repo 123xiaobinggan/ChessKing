@@ -1,7 +1,7 @@
 // db.js
 const { MongoClient } = require('mongodb');
 
-const url = 'mongodb://chessUser:Qinguanqiao1356@120.48.156.237:27017/ChessKing'; // 改成你的数据库地址
+const url = 'mongodb://chessUser:{password}{服务器ip}/ChessKing'; // 改成你的数据库地址
 const client = new MongoClient(url);
 
 async function connectDB() {
