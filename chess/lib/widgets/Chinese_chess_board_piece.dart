@@ -258,9 +258,7 @@ class ChineseChessBoardWithPieces extends StatelessWidget {
                             result: controller.result,
                             me: controller.playInfo['me'],
                             opponent: controller.playInfo['opponent'],
-                            type: controller.type.contains('ChineseChess')
-                                ? 'ChineseChess'
-                                : '',
+                            type: transform(controller.type),
                             onRestart: () => controller.startMatching(),
                           ),
                         ],
@@ -297,4 +295,15 @@ class ChineseChessBoardWithPieces extends StatelessWidget {
       },
     );
   }
+}
+
+String transform(String type) {
+  if (type.contains('ChineseChess')) {
+    return 'ChineseChess';
+  } else if (type.contains('Go')) {
+    return 'Go';
+  } else if (type.contains('military')) {
+    return 'military';
+  } else
+    return "Fir";
 }

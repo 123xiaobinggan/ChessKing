@@ -286,7 +286,7 @@ class ChineseChessBoardController extends GetxController {
       print('onOpponentReady,对方准备');
       Get.dialog(
         ShowMessageDialog(content: '对方已准备'),
-        barrierDismissible: true,
+        barrierDismissible: false,
         barrierColor: Colors.transparent,
       );
       Future.delayed(const Duration(milliseconds: 1500), () {
