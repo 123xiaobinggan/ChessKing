@@ -3,7 +3,6 @@ import 'package:socket_io_client/socket_io_client.dart' as IO;
 import 'dart:async';
 import '../global/global_data.dart'; // 存储全局数据
 import '../widgets/invite_dialog.dart'; // 显示邀请弹窗
-import 'package:dio/dio.dart'; // 网络请求库
 import 'package:get/get.dart';
 
 class SocketService {
