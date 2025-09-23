@@ -1,7 +1,7 @@
 import 'package:get/get.dart';
 
 class GlobalData extends GetxController {
-  static var url = "http://120.48.156.237:3000";
+  static var url = "{服务器地址}";
   static var socketService;
   static var userInfo = <String, dynamic>{
     'accountId': '',
