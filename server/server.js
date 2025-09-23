@@ -7,15 +7,13 @@ const http = require("http");
 const { Server } = require("socket.io");
 const server = http.createServer(app);
 const io = new Server(server, {
-  cors: { origin: "*" } // 允许跨域
+  cors: { origin: "*" }, // 允许跨域
+  pingInterval: 1000,
+  pingTimeout: 3000
 });
 
 
 const port = 3000;
-
-app.get("/", (req, res) => {
-  res.send("Hello, ChessKing Server is running!");
-});
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -36,16 +34,25 @@ const registerChineseChessWithFriendsHandle = require('./socketHandlers/ChineseC
 const registerMoveHandler = require('./socketHandlers/move');
 const registerReconnectHandler = require('./socketHandlers/reconnect');
 const registerDisconnectHandler = require('./socketHandlers/disconnect');
-const registerHeartBeatHandler = require('./socketHandlers/heartBeat');
+const registerSendInvitationHandler = require('./socketHandlers/sendInvitation');
+const registerDealInvitationHandler = require('./socketHandlers/dealInvitation');
+const registerCancelMatchHandler = require('./socketHandlers/cancelMatch');
+const registerSendOpponentInformationHandler = require('./socketHandlers/sendOpponentInformation');
+const registerOpponentReadyHandler = require('./socketHandlers/opponentReady');
 
+let accountIdMap = {}
 let waitingPlayers = [];
 const connectDB = require('./db');
 (async () => {
   const db = await connectDB(); // 初始化一次
   const roomCollection = db.collection('Room');
+  const userCollection = db.collection('UserInfo');
 
   io.on('connection', (socket) => {
-    console.log('新请求连接', socket.id);
+    const { accountId } = socket.handshake.auth;
+    accountIdMap[accountId] = socket.id
+    socket.accountId = accountId
+    console.log('新请求连接', accountId, socket.id, accountIdMap);
 
     //ChineseChessMatch
     registerChineseChessMatchHandler(io, socket, db, waitingPlayers, roomCollection);
@@ -56,12 +63,19 @@ const connectDB = require('./db');
     //落子
     registerMoveHandler(io, socket, db, roomCollection);
     //断线重连
-    registerReconnectHandler(io, socket, db,roomCollection);
+    registerReconnectHandler(io, socket, db, accountIdMap, roomCollection);
     //断线
-    registerDisconnectHandler(io, socket, db, waitingPlayers);
-    //心跳
-    registerHeartBeatHandler(io, socket, roomCollection);
-
+    registerDisconnectHandler(io, socket, db, waitingPlayers, accountIdMap, roomCollection);
+    //取消匹配
+    registerCancelMatchHandler(io, socket, waitingPlayers);
+    //发送邀请
+    registerSendInvitationHandler(io, socket, userCollection, accountIdMap);
+    //接收邀请
+    registerDealInvitationHandler(io, socket, accountIdMap);
+    //接收邀请后我送我方信息
+    registerSendOpponentInformationHandler(io, socket, accountIdMap);
+    // 通知对方我方已准备
+    registerOpponentReadyHandler(io, socket, accountIdMap);
   });
 
 })()
