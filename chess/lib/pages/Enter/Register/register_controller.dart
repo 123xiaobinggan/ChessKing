@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:dio/dio.dart';
 import '/global/global_data.dart';
 import '/pages/Tabbar/tabbar_controller.dart';
+import 'package:get_storage/get_storage.dart';
 
 class RegisterController extends GetxController {
   final accountIdController = TextEditingController(); // 账号输入框控制器
@@ -14,7 +15,10 @@ class RegisterController extends GetxController {
     String username = userNameController.text; // 获取用户名输入框的值
     String password = passwordController.text; // 获取密码输入框的值
     print('账号：$accountId，用户名：$username，密码：$password'); // 打印账号、用户名和密码
-
+    GetStorage().remove('accountId');
+    GetStorage().remove('password');
+    GetStorage().write('accountId', accountId);
+    GetStorage().write('password', password);
     final dio = Dio(); // 创建Dio实例
     final Map<String, dynamic> params = {
       // 构造请求参数
@@ -48,13 +52,14 @@ class RegisterController extends GetxController {
           // 显示成功提示
           '注册成功', // 标题
           '欢迎来到新世界，${GlobalData.userInfo['username']}', // 内容
-          snackPosition: SnackPosition.BOTTOM, // 显示位置
+          snackPosition: SnackPosition.TOP, // 显示位置
         );
         if (Get.isRegistered<TabbarController>()) {
           Get.find<TabbarController>().changeIndex(0);
         } else {
           Get.toNamed('/Tabbar'); // 跳转到Tabbar页面
         }
+        GlobalData.socketService.initSocket();
         Get.offNamed('/Tabbar');
       } else {
         Get.back(); // 关闭对话框

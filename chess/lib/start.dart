@@ -39,7 +39,6 @@ class _SplashPageState extends State<SplashPage>
       if (status == AnimationStatus.completed) {
         Future.delayed(const Duration(milliseconds: 500), () async {
           await checkUpdate();
-
           Get.off(
             () => Login(),
             transition: Transition.fadeIn,

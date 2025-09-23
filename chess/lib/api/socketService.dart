@@ -1,6 +1,10 @@
+import 'package:flutter/material.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 import 'dart:async';
 import '../global/global_data.dart'; // 存储全局数据
+import '../widgets/invite_dialog.dart'; // 显示邀请弹窗
+import 'package:dio/dio.dart'; // 网络请求库
+import 'package:get/get.dart';
 
 class SocketService {
   static final SocketService _instance = SocketService._internal();
@@ -9,10 +13,7 @@ class SocketService {
 
   IO.Socket? _socket;
 
-  Timer? _heartbeatTimer; // 心跳定时器
-
   String? _roomId = '';
-  String? _accountId = GlobalData.userInfo['accountId'];
 
   // ---- 事件流 ----
   StreamController<Map<String, dynamic>>? _moveController;
@@ -27,13 +28,33 @@ class SocketService {
   Stream<dynamic> get onWaiting =>
       _waitingController?.stream ?? const Stream.empty();
 
-  StreamController<dynamic>? _opponentPongController;
-  Stream<dynamic> get onOpponentPong =>
-      _opponentPongController?.stream ?? const Stream.empty();
+  StreamController<dynamic>? _disconnectController;
+  Stream<dynamic> get onDisconnect =>
+      _disconnectController?.stream ?? const Stream.empty();
+
+  StreamController<dynamic>? _opponentDisconnectController;
+  Stream<dynamic> get onOpponentDisconnect =>
+      _opponentDisconnectController?.stream ?? const Stream.empty();
 
   StreamController<dynamic>? _reconnectController;
   Stream<dynamic> get onReconnect =>
       _reconnectController?.stream ?? const Stream.empty();
+
+  StreamController<dynamic>? _opponentReconnectController;
+  Stream<dynamic> get onOpponentReconnect =>
+      _opponentReconnectController?.stream ?? const Stream.empty();
+
+  StreamController<dynamic>? _opponentDealInvitationController;
+  Stream<dynamic> get onOpponentDealInvitation =>
+      _opponentDealInvitationController?.stream ?? const Stream.empty();
+
+  StreamController<dynamic>? _opponentSendInformationController;
+  Stream<dynamic> get onOpponentSendInformation =>
+      _opponentSendInformationController?.stream?? const Stream.empty();
+
+  StreamController<dynamic>? _opponentReadyController;
+  Stream<dynamic> get onOpponentReady =>
+      _opponentReadyController?.stream?? const Stream.empty();
 
   // ---- 初始化连接 ----
   void initSocket() {
@@ -42,7 +63,7 @@ class SocketService {
       return;
     }
 
-    // 重新创建 StreamController 实例
+    // 创建 StreamController 实例
     _moveController?.close();
     _moveController = StreamController<Map<String, dynamic>>.broadcast();
 
@@ -53,32 +74,52 @@ class SocketService {
     _waitingController?.close();
     _waitingController = StreamController<dynamic>.broadcast();
 
+    _disconnectController?.close();
+    _disconnectController = StreamController<dynamic>.broadcast();
+
     _reconnectController?.close();
     _reconnectController = StreamController<dynamic>.broadcast();
+
+    _opponentDisconnectController?.close();
+    _opponentDisconnectController = StreamController<dynamic>.broadcast();
+
+    _opponentReconnectController?.close();
+    _opponentReconnectController = StreamController<dynamic>.broadcast();
+
+    _opponentDealInvitationController?.close();
+    _opponentDealInvitationController = StreamController<dynamic>.broadcast();
+
+    _opponentSendInformationController?.close();
+    _opponentSendInformationController = StreamController<dynamic>.broadcast();
+
+    _opponentReadyController?.close();
+    _opponentReadyController = StreamController<dynamic>.broadcast();
 
     _socket = IO.io(
       'http://120.48.156.237:3000',
       IO.OptionBuilder()
           .setTransports(['websocket'])
-          .setReconnectionAttempts(20) // 最多重连 20 次
-          .setReconnectionDelay(2000) // 每次间隔 2 秒
+          .enableForceNew()
+          .setAuth({'accountId': GlobalData.userInfo['accountId']})
+          .setReconnectionAttempts(20)
+          .setReconnectionDelay(2000)
           .build(),
     );
 
     // --- 基础事件 ---
     _socket?.onConnect((_) {
       print("✅ Socket 已连接: ${_socket?.id}");
-      _accountId = GlobalData.userInfo['accountId'];
-      print('accountId,$_accountId');
+
       if (_roomId != '') {
         reconnectRoom();
       }
-      _startHeartbeat(); // ✅ 开始心跳
     });
 
     _socket?.onDisconnect((_) {
       print("❌ Socket 已断开");
-      _stopHeartbeat(); // 停止心跳
+      if (_disconnectController?.isClosed == false) {
+        _disconnectController?.add(true);
+      }
     });
 
     _socket?.onReconnect((attempt) {
@@ -102,8 +143,11 @@ class SocketService {
     });
 
     // --- 业务事件 ---
-    _socket?.on('reconnectRoom', (data) {
-      print("🔄 重新连接房间: $data");
+    _socket?.on('reconnect_success', (data) {
+      print("🔄 重新连接房间成功: $data");
+      if (_reconnectController?.isClosed == false) {
+        _reconnectController?.add(data);
+      }
     });
 
     _socket?.on('match_success', (data) {
@@ -111,7 +155,14 @@ class SocketService {
       if (_matchSuccessController?.isClosed == false) {
         _matchSuccessController?.add(Map<String, dynamic>.from(data));
         _roomId = data['roomId']; // 更新房间 ID
-        print('roomId,$_roomId,$_accountId');
+        print('roomId,$_roomId');
+      }
+    });
+
+    _socket?.on('opponentReady', (_){
+      print('对方已准备');
+      if (_opponentReadyController?.isClosed == false) {
+        _opponentReadyController?.add(true); // 发送空数据
       }
     });
 
@@ -133,18 +184,77 @@ class SocketService {
       }
     });
 
-    // --- 心跳响应 ---
-    _socket?.on('pong', (_) {
-      print("❤️ 心跳回应");
-    });
-
-    _socket?.on('opponentPong', (_) {
-      print("❤️ 对手心跳回应");
-      if (_opponentPongController?.isClosed == false) {
-        _opponentPongController?.add(true); // 发送空数据
+    _socket?.on('opponentDisconnect', (_) {
+      print("❤️ 对手断线");
+      if (_opponentDisconnectController?.isClosed == false) {
+        print('通知前端对手断线');
+        _opponentDisconnectController?.add(true); // 发送空数据
       }
     });
 
+    _socket?.on('opponentReconnect', (_) {
+      print('❤️ 对方重新连接');
+      if (_opponentReconnectController?.isClosed == false) {
+        _opponentReconnectController?.add(true); // 发送空数据
+      }
+    });
+
+    _socket?.on('receiveInvitation', (data) {
+      print('receiveInvitation,$data');
+      print(
+        '${data['gameTime'].runtimeType},${data['stepTime'].runtimeType},${data['type'].runtimeType}',
+      );
+      if (GlobalData.isPlaying == true) {
+        data['deal'] = 'playing';
+        dealInvitation(data);
+      } else {
+        Get.dialog(
+          InviteDialog(
+            avatar: data['avatar'],
+            accountId: data['inviterAccountId'],
+            username: data['username'],
+            type: transform(data['type']),
+            gameTime: ((data['gameTime'] / 60).toInt() ?? 0).toString() + '分',
+            stepTime: (data['stepTime'] ?? 0).toString() + '秒',
+            onAccept: () {
+              data['deal'] = 'accept';
+              dealInvitation(data);
+              Get.back();
+              Get.toNamed(
+                '/ChineseChessBoard',
+                parameters: {
+                  'type': 'ChineseChessWithFriends',
+                  'accountId': data['inviterAccountId'],
+                  'gameTime': data['gameTime'].toString(),
+                  'stepTime': data['stepTime'].toString(),
+                },
+              );
+            },
+            onReject: () {
+              data['deal'] = 'reject';
+              dealInvitation(data);
+              Get.back();
+            },
+          ),
+          barrierDismissible: true,
+          barrierColor: Colors.transparent,
+        );
+      }
+    });
+
+    _socket?.on('opponentDealInvitation', (data) {
+      print('opponentDealInvitation,$data');
+      if (_opponentDealInvitationController?.isClosed == false) {
+        _opponentDealInvitationController?.add(data);
+      }
+    });
+
+    _socket?.on('opponentSendInformation', (_) {
+      print('opponentSendInformation');
+      if (_opponentSendInformationController?.isClosed == false) {
+        _opponentSendInformationController?.add(true);
+      }
+    });
     // 开始连接
     _socket!.connect();
   }
@@ -159,6 +269,16 @@ class SocketService {
     _socket?.emit(type, params);
   }
 
+  // ---- 通知对方我方已准备 ----
+  void sendReady(String opponentAccountId) {
+    if (_socket?.connected == true) {
+      print("📤 通知对方我方已准备");
+      _socket?.emit('ready', opponentAccountId);
+    } else {
+      print("⚠️ 未连接，无法发送准备消息");
+    }
+  }
+
   // ---- 发送落子 ----
   void sendMove(Map<String, dynamic> move) {
     if (_socket?.connected == true) {
@@ -170,44 +290,63 @@ class SocketService {
   }
 
   // ---- 发送取消匹配 ----
-  void disconnect() {
+  void cancelMatch() {
     if (_socket?.connected == true) {
       print("📤 发送取消匹配");
-      _socket?.disconnect();
+      _socket?.emit('cancelMatch');
     } else {
       print("⚠️ 未连接，无法发送取消匹配");
     }
   }
 
-  // ---- 心跳逻辑 ----
-  void _startHeartbeat() {
-    _heartbeatTimer?.cancel();
-    _heartbeatTimer = Timer.periodic(const Duration(seconds: 5), (_) {
-      if (_socket != null && _socket!.connected) {
-        print("💓 发送心跳 ping");
-        _socket!.emit('ping');
-      }
-    });
+  // ---- 发送邀请 ----
+  void sendInvitation(Map<String, dynamic> params) {
+    if (_socket?.connected == true) {
+      print("📤 发送邀请: $params");
+      _socket?.emit('sendInvitation', params);
+    } else {
+      print("⚠️ 未连接，无法发送邀请");
+    }
   }
 
-  void _stopHeartbeat() {
-    _heartbeatTimer?.cancel();
-    _heartbeatTimer = null;
+  // ---- 处理邀请 ----
+  void dealInvitation(Map<String, dynamic> params) {
+    if (_socket?.connected == true) {
+      print("📤 发送接受邀请: $params");
+      _socket?.emit('dealInvitation', params);
+    } else {
+      print("⚠️ 未连接，无法发送接受邀请");
+    }
   }
 
+  // ---- 发送我方信息 ----
+  void sendOpponentInformation(data) {
+    if (_socket?.connected == true) {
+      print('sendOpponentInformation,$data');
+      _socket?.emit('sendOpponentInformation', data);
+    } else {
+      print("⚠️ 未连接，无法响应");
+    }
+  }
+
+  // ---- 重新连接房间 ----
   void reconnectRoom() {
-    print("🔄 reconnectRoom重新连接房间,${_roomId},${_accountId}");
+    print("🔄 reconnectRoom重新连接房间,${_roomId}");
+    print('roomId,$_roomId');
     _socket?.emit('reconnectRoom', {
       'roomId': _roomId,
-      'accountId': _accountId,
+      'accountId': GlobalData.userInfo['accountId'],
     });
+  }
+
+  // ---- 离开房间 ----
+  void overGame(){
+    _roomId = '';
   }
 
   // ---- 销毁 ----
   void dispose() {
     print("🧹 销毁 SocketService");
-
-    _stopHeartbeat();
 
     // 取消所有事件监听
     _socket?.off('waiting');
@@ -230,5 +369,20 @@ class SocketService {
     _socket?.dispose();
     _socket = null;
     _roomId = '';
+  }
+}
+
+String transform(String? type) {
+  if (type == null) {
+    return '';
+  }
+  if (type.contains('ChineseChess')) {
+    return '中国象棋';
+  } else if (type.contains('Go')) {
+    return '围棋';
+  } else if (type.contains('military')) {
+    return '军棋';
+  } else {
+    return '五子棋';
   }
 }

@@ -147,7 +147,6 @@ class _MyFriendsState extends State<MyFriends> {
                                   itemCount: controller.friends.length,
                                   itemBuilder: (context, index) {
                                     final friend = controller.friends[index];
-
                                     return buildFriendItem(friend, controller);
                                   },
                                 );

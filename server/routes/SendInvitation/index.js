@@ -31,6 +31,9 @@ async function main(req, context) {
     return { code: 1, msg: '查询用户失败' };
   }
 
+  if (!rid) {
+    return { code: 1, msg: "用户未登录" };
+  }
   // 发送推送
   try {
     await sendInvite(

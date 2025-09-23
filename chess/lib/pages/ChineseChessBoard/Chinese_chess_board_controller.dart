@@ -95,12 +95,20 @@ class ChineseChessBoardController extends GetxController {
   bool _moveListenerInitialized = false;
   StreamSubscription<dynamic>? _moveSubscription;
   StreamSubscription<dynamic>? _matchSubscription;
+  StreamSubscription<dynamic>? _waitingSubscription;
+  StreamSubscription<dynamic>? _disconnectSubscription;
+  StreamSubscription<dynamic>? _opponentDisconnectSubscription;
+  StreamSubscription<dynamic>? _reconnectSubscription;
+  StreamSubscription<dynamic>? _opponentReconnectSubscription;
+  StreamSubscription<dynamic>? _opponentDealInvitationSubscription;
+  StreamSubscription<dynamic>? _opponentSendInformationSubscription;
+  StreamSubscription<dynamic>? _opponentReadySubscription;
 
   @override
   void onInit() {
     super.onInit();
     print('onInit');
-    print('moves,${moves.length}');
+
     socketService.initSocket(); // 初始化 SocketService
 
     playInfo['me']['myTurn'].listen((value) {
@@ -138,16 +146,152 @@ class ChineseChessBoardController extends GetxController {
       }
     });
 
-    socketService.onReconnect.listen((data) {
+    // 我方断线
+    _disconnectSubscription = socketService.onDisconnect.listen((data) {
+      if (stage.value == GameStage.playing) {
+        print('onDisconnect,断开连接,${data}');
+        Get.dialog(
+          ShowMessageDialog(content: '正在重新连接'),
+          barrierDismissible: false,
+          barrierColor: Colors.transparent,
+        );
+      }
+    });
+
+    // 重连获取棋盘数据
+    _reconnectSubscription = socketService.onReconnect.listen((data) {
+      Get.back();
       print('onReconnect重新连接,$data');
       if (data['status'] == "finished") {
         overGame(data['result']['winner'], data['result']['reason']);
         return;
       }
-      if(data['moves'].length > moves.length){
-        print('moves,${moves.length}');
-        getOpponentMove(data['moves'][moves.length]);
+      if (data['moves'].length > moves.length) {
+        print(
+          'moves,${data['moves']},${moves.length},${data['moves'][moves.length]}',
+        );
+        getOpponentMove({'step': data['moves'][moves.length]});
       }
+    });
+
+    // 对方断线通知
+    _opponentDisconnectSubscription = socketService.onOpponentDisconnect.listen(
+      (data) {
+        print('onOpponentDisconnect,断开连接,${data}');
+        Get.dialog(
+          ShowMessageDialog(content: '对方断线,等待重连'),
+          barrierDismissible: false,
+          barrierColor: Colors.transparent,
+        );
+        Future.delayed(const Duration(milliseconds: 1500), () {
+          Get.back();
+        });
+      },
+    );
+
+    //对方重连通知
+    _opponentReconnectSubscription = socketService.onOpponentReconnect.listen((
+      data,
+    ) {
+      print('onOpponentReconnect,对方重新连接,${data}');
+      Get.dialog(
+        ShowMessageDialog(content: '对方已重连'),
+        barrierDismissible: false,
+        barrierColor: Colors.transparent,
+      );
+      Future.delayed(const Duration(milliseconds: 1500), () {
+        Get.back();
+      });
+    });
+
+    //对方进房
+    _opponentDealInvitationSubscription = socketService.onOpponentDealInvitation
+        .listen((data) async {
+          print('onOpponentDealInvitation,对方已处理邀请,${data}');
+          if (data['deal'] == 'reject') {
+            Get.dialog(
+              ShowMessageDialog(content: '对方拒绝了你的邀请'),
+              barrierDismissible: false,
+              barrierColor: Colors.transparent,
+            );
+            Future.delayed(const Duration(milliseconds: 1500), () {
+              Get.back();
+            });
+          } else if (data['deal'] == 'playing') {
+            Get.dialog(
+              ShowMessageDialog(content: "对方在对局中"),
+              barrierDismissible: false,
+              barrierColor: Colors.transparent,
+            );
+            Future.delayed(const Duration(milliseconds: 1500), () {
+              Get.back();
+            });
+          } else {
+            socketService.sendOpponentInformation(data);
+            playInfo['opponent']['accountId'].value = data['inviteeAccountId'];
+            Dio dio = new Dio();
+            Map<String, dynamic> params = {
+              'accountId': data['inviteeAccountId'],
+            };
+            try {
+              final res = await dio.post(
+                GlobalData.url + '/GetUserInfo',
+                data: params,
+              );
+              if (res.data['code'] == 0) {
+                playInfo['opponent']['username'].value = res.data['username'];
+                playInfo['opponent']['avatar'].value = res.data['avatar'];
+                playInfo['opponent']['level'].value =
+                    res.data['ChineseChess']['level'];
+              }
+            } catch (e) {
+              print(e);
+              Get.dialog(
+                ShowMessageDialog(content: '获取用户信息失败'),
+                barrierDismissible: false,
+                barrierColor: Colors.transparent,
+              );
+              Future.delayed(const Duration(milliseconds: 1500), () {
+                Get.back();
+              });
+            }
+          }
+        });
+
+    //进房收取对方信息
+    _opponentSendInformationSubscription = socketService
+        .onOpponentSendInformation
+        .listen((_) async {
+          print('onOpponentSendInformation,收到对方信息');
+          Dio dio = new Dio();
+          try {
+            final res = await dio.post(
+              GlobalData.url + '/GetUserInfo',
+              data: {'accountId': opponentAccountId},
+            );
+            if (res.data['code'] == 0) {
+              playInfo['opponent']['username'].value = res.data['username'];
+              playInfo['opponent']['username'].value = res.data['username'];
+              playInfo['opponent']['avatar'].value = res.data['avatar'];
+              playInfo['opponent']['level'].value =
+                  res.data['ChineseChess']['level'];
+            }
+          } catch (e) {
+            print('e,$e');
+          }
+        });
+
+    // 对方准备
+    _opponentReadySubscription = socketService.onOpponentReady.listen((_) {
+      print('onOpponentReady,对方准备');
+      Get.dialog(
+        ShowMessageDialog(content: '对方已准备'),
+        barrierDismissible: true,
+        barrierColor: Colors.transparent,
+      );
+      Future.delayed(const Duration(milliseconds: 1500), () {
+        Get.back();
+      });
     });
   }
 
@@ -155,18 +299,38 @@ class ChineseChessBoardController extends GetxController {
   void onClose() {
     print('onClose');
     stopTimer();
+    socketService.overGame();
+    GlobalData.isPlaying = false;
+    if (stage.value == GameStage.matching) {
+      socketService.cancelMatch();
+    }
     if (stage.value == GameStage.playing) {
       sendMyMove('认输', Point(row: -1, col: -1), Point(row: -1, col: -1));
       overGame('败', 'surrender');
     } else {
       Get.back();
     }
+    _waitingSubscription?.cancel();
+    _waitingSubscription = null;
+    _opponentDisconnectSubscription?.cancel();
+    _opponentDisconnectSubscription = null;
+    _opponentReconnectSubscription?.cancel();
+    _opponentReconnectSubscription = null;
+    _disconnectSubscription?.cancel();
+    _disconnectSubscription = null;
+    _reconnectSubscription?.cancel();
+    _reconnectSubscription = null;
     _matchSubscription?.cancel();
     _matchSubscription = null;
+    _opponentDealInvitationSubscription?.cancel();
+    _opponentDealInvitationSubscription = null;
+    _opponentSendInformationSubscription?.cancel();
+    _opponentSendInformationSubscription = null;
+    _opponentReadySubscription?.cancel();
+    _opponentReadySubscription = null;
     _moveSubscription?.cancel();
     _moveSubscription = null;
     _moveListenerInitialized = false;
-    socketService.dispose();
     chatInputController.dispose();
     Get.delete<ChineseChessBoardController>();
     super.onClose();
@@ -552,7 +716,7 @@ class ChineseChessBoardController extends GetxController {
     // 判断是否处于绝杀状态
     isInCheckMateNotifier.value = checkmate(playInfo['opponent']);
     if (isInCheckMateNotifier.value == true) {
-      Future.delayed(Duration(milliseconds: 4000), () {
+      Future.delayed(Duration(milliseconds: 3500), () {
         overGame('胜', 'checkmate');
       });
       return;
@@ -590,7 +754,7 @@ class ChineseChessBoardController extends GetxController {
     isInCheckMateNotifier.value = checkmate(playInfo['me']);
     print('是否对方绝杀: ${isInCheckMateNotifier.value}');
     if (isInCheckMateNotifier.value == true) {
-      Future.delayed(Duration(milliseconds: 4000), () {
+      Future.delayed(Duration(milliseconds: 3500), () {
         overGame('败', 'checkmate');
       });
       return;
@@ -1035,6 +1199,7 @@ class ChineseChessBoardController extends GetxController {
       print('okok');
       // print("匹配成功 => $data");
       print('match end:');
+      GlobalData.isPlaying = true;
       stage.value = GameStage.playing;
       matchSuccess(data);
       initChessBoard();
@@ -1045,6 +1210,10 @@ class ChineseChessBoardController extends GetxController {
   // 匹配请求
   void matching() async {
     print('开始匹配');
+    if(opponentAccountId != '空座'){
+      socketService.sendReady(opponentAccountId);
+    }
+    
     final Map<String, dynamic> params = {
       'player': {
         'accountId': playInfo['me']['accountId'],
@@ -1123,7 +1292,7 @@ class ChineseChessBoardController extends GetxController {
       '兵',
       '卒',
     ];
-
+    print('moveData,$moveData');
     final data = moveData['step'];
     print('data,$data');
     // 如果不是对方的操作，则忽略

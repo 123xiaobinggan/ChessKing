@@ -22,8 +22,8 @@ async function updateLevel(db, accountId, Type, win) {
 
     // 再查最新数据
     const user = await userCollection.findOne({ accountId: accountId });
-    console.log('accountId', accountId);
-    console.log('user', user);
+    // console.log('accountId', accountId);
+    // console.log('user', user);
     if (!user) {
       return;
     }

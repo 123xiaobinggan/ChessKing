@@ -6,7 +6,7 @@ const connectDB = require('../../db');
 async function main(req, context) {
   try {
     const db = await connectDB();
-    const { accountId, username, avatar, description, password, newPassword } = req.body;
+    const { accountId } = req.body;
 
     const userCollection = db.collection('UserInfo');
 
@@ -16,26 +16,18 @@ async function main(req, context) {
       return { code: 1, msg: '用户不存在' };
     }
 
-    // 校验密码（如果前端传了 password）
-    if (password && user.password !== password) {
-      return { code: 1, msg: '密码错误' };
-    }
-
     // 构造更新数据
     const data = {
-      username: username || user.username,
-      avatar: avatar || user.avatar,
-      description: description || user.description,
-      password: newPassword || user.password,
+      rid: ""
     };
-    
-    // 更新用户信息
+
+    // 更新用户rid信息
     await userCollection.updateOne(
       { _id: user._id },
       { $set: data }
     );
     console.log('更新成功');
-    return { code: 0, msg: '修改成功' };
+    return { code: 0, msg: '更新成功' };
   } catch (err) {
     console.error('更新用户信息失败:', err);
     return { code: 1, msg: '修改失败', error: err.message };

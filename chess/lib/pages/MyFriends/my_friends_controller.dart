@@ -13,10 +13,12 @@ class MyFriendsController extends GetxController {
   final RxList<dynamic> displayList = [].obs; // 搜索结果列表
   final TextEditingController searchController =
       TextEditingController(); // 搜索控制器
+  final socketService = GlobalData.socketService;
 
   @override
   void onInit() async {
     super.onInit();
+    socketService.initSocket(); // 初始化 Socket 连接
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await getFriends(); // 初始化时获取好友列表
       getNotAddedFriends(); // 初始化时获取未添加的好友列表
@@ -169,6 +171,14 @@ class MyFriendsController extends GetxController {
                                   barrierColor: Colors.transparent,
                                 );
                                 Future.delayed(Duration(seconds: 5), () {
+                                  socketService.sendInvitation({
+                                    'inviterAccountId':
+                                        GlobalData.userInfo['accountId'],
+                                    'inviteeAccountId': accountId,
+                                    'type': type,
+                                    'gameTime': 5 * 60,
+                                    'stepTime': 15,
+                                  });
                                   Get.back();
                                   Get.toNamed(
                                     '/ChineseChessBoard',
@@ -182,6 +192,17 @@ class MyFriendsController extends GetxController {
                                 });
                               } else {
                                 print('发送邀请失败,${res.data['msg']}');
+                                Get.dialog(
+                                  ShowMessageDialog(content: res.data['msg']),
+                                  barrierDismissible: true,
+                                  barrierColor: Colors.transparent,
+                                );
+                                Future.delayed(
+                                  Duration(milliseconds: 1500),
+                                  () {
+                                    Get.back();
+                                  },
+                                );
                               }
                             } catch (e) {
                               print(e);
@@ -215,6 +236,15 @@ class MyFriendsController extends GetxController {
                                   barrierColor: Colors.transparent,
                                 );
                                 Future.delayed(Duration(seconds: 2), () {
+                                  socketService.sendInvitation({
+                                    'inviterAccountId':
+                                        GlobalData.userInfo['accountId'],
+                                    'inviteeAccountId': accountId,
+                                    'type': type,
+                                    'gameTime': 10 * 60,
+                                    'stepTime': 30,
+                                  });
+
                                   Get.back();
                                   Get.toNamed(
                                     '/ChineseChessBoard',
@@ -228,6 +258,17 @@ class MyFriendsController extends GetxController {
                                 });
                               } else {
                                 print('发送邀请失败,${res.data['msg']}');
+                                Get.dialog(
+                                  ShowMessageDialog(content: res.data['msg']),
+                                  barrierDismissible: true,
+                                  barrierColor: Colors.transparent,
+                                );
+                                Future.delayed(
+                                  Duration(milliseconds: 1500),
+                                  () {
+                                    Get.back();
+                                  },
+                                );
                               }
                             } catch (e) {
                               print(e);
@@ -261,6 +302,15 @@ class MyFriendsController extends GetxController {
                                   barrierColor: Colors.transparent,
                                 );
                                 Future.delayed(Duration(seconds: 1), () {
+                                  socketService.sendInvitation({
+                                    'inviterAccountId':
+                                        GlobalData.userInfo['accountId'],
+                                    'inviteeAccountId': accountId,
+                                    'type': type,
+                                    'gameTime': 15 * 60,
+                                    'stepTime': 60,
+                                  });
+
                                   Get.back();
                                   Get.toNamed(
                                     '/ChineseChessBoard',
@@ -274,6 +324,15 @@ class MyFriendsController extends GetxController {
                                 });
                               } else {
                                 print('发送邀请失败,${res.data['msg']}');
+                                Get.dialog(
+                                  ShowMessageDialog(content: res.data['msg']),
+                                  barrierDismissible: true,
+                                  barrierColor: Colors.transparent,
+                                );
+                                Future.delayed(Duration(milliseconds: 1500), () {
+                                  Get.back();
+                                });
+
                               }
                             } catch (e) {
                               print(e);
@@ -306,7 +365,15 @@ class MyFriendsController extends GetxController {
                                   barrierDismissible: true,
                                   barrierColor: Colors.transparent,
                                 );
-                                Future.delayed(Duration(seconds: 1), () {
+                                Future.delayed(Duration(milliseconds: 500), () {
+                                  socketService.sendInvitation({
+                                    'inviterAccountId':
+                                        GlobalData.userInfo['accountId'],
+                                    'inviteeAccountId': accountId,
+                                    'type': type,
+                                    'gameTime': 20 * 60,
+                                    'stepTime': 60,
+                                  });
                                   Get.back();
                                   Get.toNamed(
                                     '/ChineseChessBoard',
@@ -320,6 +387,15 @@ class MyFriendsController extends GetxController {
                                 });
                               } else {
                                 print('发送邀请失败,${res.data['msg']}');
+                                Get.dialog(
+                                  ShowMessageDialog(content: res.data['msg']),
+                                  barrierDismissible: true,
+                                  barrierColor: Colors.transparent,
+                                );
+                                Future.delayed(Duration(milliseconds: 1500), () {
+                                  Get.back();
+                                });
+
                               }
                             } catch (e) {
                               print(e);

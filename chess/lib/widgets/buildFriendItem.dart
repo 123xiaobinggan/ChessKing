@@ -111,7 +111,7 @@ Widget buildFriendItem(Map friend, dynamic controller) {
                 minimumSize: const Size(45, 25),
               ),
               child: const Text(
-                '邀请',
+                '进房',
                 style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
                 maxLines: 1,
               ),

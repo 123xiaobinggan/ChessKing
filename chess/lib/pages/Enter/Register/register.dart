@@ -62,7 +62,6 @@ class Register extends StatelessWidget {
     "XiaWuZhenKai",
     "SanJi",
     "QianDu",
-    "LinHaiDiShu",
   ];
 
   final RegisterController registerController = Get.put(RegisterController());
@@ -105,7 +104,7 @@ class Register extends StatelessWidget {
                   Text(
                     sayings[Random().nextInt(sayings.length)],
                     style: TextStyle(
-                      fontSize: 30,
+                      fontSize: 25,
                       fontWeight: FontWeight.bold,
                       fontFamilyFallback: [
                         fontFamilies[Random().nextInt(fontFamilies.length)],

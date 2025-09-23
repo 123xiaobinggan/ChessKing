@@ -16,7 +16,7 @@ module.exports = (io, socket, db, waitingPlayers, roomCollection) => {
       player.id = socket.id;
       const player1 = { ...player, isRed: Math.random() > 0.5 };
       const player2 = { ...opponent, isRed: !player1.isRed };
-      delete player2.socket; // 避免把 socket 对象传给前端
+      delete player2.socket; // 避免把 socket 对象插入数据库
 
       const newRoom = {
         player1,
@@ -36,6 +36,10 @@ module.exports = (io, socket, db, waitingPlayers, roomCollection) => {
       // 加入 socket.io 房间
       socket.join(roomId);
       opponent.socket.join(roomId);
+      socket.accountId = player['accountId'];
+      socket.roomId = roomId;
+      opponent.socket.accountId = player2['accountId'];
+      opponent.socket.roomId = roomId;
 
       io.to(roomId).emit("match_success", {
         roomId,

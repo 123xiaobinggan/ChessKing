@@ -34,6 +34,10 @@ module.exports = (io, socket, db, waitingPlayers, roomCollection) => {
       // 加入 socket.io 房间
       socket.join(roomId);
       opponent.socket.join(roomId);
+      socket.accountId = player['accountId'];
+      socket.roomId = roomId;
+      opponent.socket.accountId = player2['accountId'];
+      opponent.socket.roomId = roomId;
 
       io.to(roomId).emit("match_success", {
         roomId,

@@ -126,7 +126,7 @@ class ChineseChessBoardWithPieces extends StatelessWidget {
                           // 绿色可移动点
                           ...controller.availableMove.map((p) {
                             const double visualSize = 12; // 视觉圈圈大小
-                            const double hitSize = 40; // 点击范围大小
+                            const double hitSize = 50; // 点击范围大小
 
                             // 原本计算的位置 (针对视觉圈圈的左上角)
                             final left =

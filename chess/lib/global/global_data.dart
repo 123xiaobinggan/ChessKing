@@ -23,4 +23,5 @@ class GlobalData extends GetxController {
   static Map<dynamic, dynamic>? version;
   static Map<dynamic, dynamic>? pendingNotification;
   static bool isLoggedIn = false;
+  static bool isPlaying = false;
 }

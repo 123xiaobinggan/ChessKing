@@ -2,7 +2,6 @@ import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import '/global/global_data.dart';
 import 'package:dio/dio.dart';
-import '/pages/Tabbar/tabbar_controller.dart';
 import 'package:get_storage/get_storage.dart';
 import '../../../api/pushManager.dart';
 import 'dart:math';
@@ -67,7 +66,6 @@ class LoginController extends GetxController {
     "XiaWuZhenKai",
     "SanJi",
     "QianDu",
-    "LinHaiDiShu",
   ];
 
   @override
@@ -97,6 +95,8 @@ class LoginController extends GetxController {
   void login() async {
     String accountId = accountIdController.text;
     String password = passwordController.text;
+    GetStorage().remove('accountId');
+    GetStorage().remove('password');
     _storage.write('accountId', accountId);
     _storage.write('password', password);
     print('Login: $accountId, $password');
@@ -137,6 +137,7 @@ class LoginController extends GetxController {
           '欢迎回来，${GlobalData.userInfo['username']}',
           snackPosition: SnackPosition.TOP,
         );
+        GlobalData.socketService.initSocket();
         Get.offNamed('/Tabbar');
       } else {
         Get.back();
