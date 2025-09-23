@@ -242,22 +242,30 @@ class _MyFriendsState extends State<MyFriends> {
                                       children: [
                                         Row(
                                           children: [
-                                            Container(
-                                              width: 50,
-                                              height: 50,
-                                              decoration: BoxDecoration(
-                                                shape: BoxShape.circle,
-                                                border: Border.all(
-                                                  color: Colors.white,
-                                                  width: 2,
-                                                ),
-                                              ),
-                                              child: ClipOval(
-                                                child: Image.network(
+                                            GestureDetector(
+                                              onTap: () {
+                                                controller.showPersonalInfo(
                                                   controller
-                                                          .displayList[index]['avatar'] ??
-                                                      'https://binggan-1358387153.cos.ap-guangzhou.myqcloud.com/User/NotLogin.png',
-                                                  fit: BoxFit.cover,
+                                                      .displayList[index]['accountId'],
+                                                );
+                                              },
+                                              child: Container(
+                                                width: 50,
+                                                height: 50,
+                                                decoration: BoxDecoration(
+                                                  shape: BoxShape.circle,
+                                                  border: Border.all(
+                                                    color: Colors.white,
+                                                    width: 2,
+                                                  ),
+                                                ),
+                                                child: ClipOval(
+                                                  child: Image.network(
+                                                    controller
+                                                            .displayList[index]['avatar'] ??
+                                                        'https://binggan-1358387153.cos.ap-guangzhou.myqcloud.com/User/NotLogin.png',
+                                                    fit: BoxFit.cover,
+                                                  ),
                                                 ),
                                               ),
                                             ),

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-
 Widget buildRequestFriendItem(Map friend, dynamic controller) {
   return Container(
     margin: const EdgeInsets.fromLTRB(5, 0, 5, 12),
@@ -8,10 +7,7 @@ Widget buildRequestFriendItem(Map friend, dynamic controller) {
     decoration: BoxDecoration(
       color: const Color(0xFFFFF8E7), // 更浅的米色
       borderRadius: BorderRadius.circular(16),
-      border: Border.all(
-        color: const Color(0xFFA67B5B),
-        width: 3,
-      ),
+      border: Border.all(color: const Color(0xFFA67B5B), width: 3),
       boxShadow: [
         BoxShadow(
           color: Colors.brown.withValues(alpha: 0.4),
@@ -26,24 +22,27 @@ Widget buildRequestFriendItem(Map friend, dynamic controller) {
         // 左侧头像 + accountId
         Row(
           children: [
-            Container(
-              width: 50,
-              height: 50,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: Colors.white,
-                  width: 2,
+            GestureDetector(
+              onTap: () {
+                controller.showPersonalInfo(friend['accountId']);
+              },
+              child: Container(
+                width: 50,
+                height: 50,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.white, width: 2),
                 ),
-              ),
-              child: ClipOval(
-                child: Image.network(
-                  friend['avatar'] ??
-                      'https://binggan-1358387153.cos.ap-guangzhou.myqcloud.com/User/NotLogin.png',
-                  fit: BoxFit.cover,
+                child: ClipOval(
+                  child: Image.network(
+                    friend['avatar'] ??
+                        'https://binggan-1358387153.cos.ap-guangzhou.myqcloud.com/User/NotLogin.png',
+                    fit: BoxFit.cover,
+                  ),
                 ),
               ),
             ),
+
             const SizedBox(width: 12),
             Text(
               friend['accountId'] ?? '未知用户',

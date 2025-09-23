@@ -1,5 +1,6 @@
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
+import '../../widgets/build_personal_info_card.dart';
 import '/global/global_data.dart'; // 导入全局数据类
 import 'package:dio/dio.dart'; // 导入 Dio 库
 import '/widgets/build_gameType_select_button.dart';
@@ -329,10 +330,12 @@ class MyFriendsController extends GetxController {
                                   barrierDismissible: true,
                                   barrierColor: Colors.transparent,
                                 );
-                                Future.delayed(Duration(milliseconds: 1500), () {
-                                  Get.back();
-                                });
-
+                                Future.delayed(
+                                  Duration(milliseconds: 1500),
+                                  () {
+                                    Get.back();
+                                  },
+                                );
                               }
                             } catch (e) {
                               print(e);
@@ -392,10 +395,12 @@ class MyFriendsController extends GetxController {
                                   barrierDismissible: true,
                                   barrierColor: Colors.transparent,
                                 );
-                                Future.delayed(Duration(milliseconds: 1500), () {
-                                  Get.back();
-                                });
-
+                                Future.delayed(
+                                  Duration(milliseconds: 1500),
+                                  () {
+                                    Get.back();
+                                  },
+                                );
                               }
                             } catch (e) {
                               print(e);
@@ -666,5 +671,74 @@ class MyFriendsController extends GetxController {
 
   Future<void> refreshFriends() async {
     getFriends();
+  }
+
+  // 展示个人信息
+  void showPersonalInfo(String accountId) async {
+    String avatar =
+        'https://binggan-1358387153.cos.ap-guangzhou.myqcloud.com/User/xiaobinggan.jpg';
+    String username = '';
+    String description = '';
+    int activity = 0;
+    int gold = 0;
+    int coupon = 0;
+    Dio dio = Dio();
+    Map<String, dynamic> params = {'accountId': accountId};
+    try {
+      final res = await dio.post("${GlobalData.url}/GetUserInfo", data: params);
+      if (res.data['code'] == 0) {
+        print(res.data);
+        avatar = res.data['avatar'];
+        username = res.data['username'];
+        description = res.data['description'];
+        activity = res.data['activity'].toInt();
+        gold = res.data['gold'].toInt();
+        coupon = res.data['coupon'].toInt();
+      } else {
+        print(res.data['msg']);
+      }
+    } catch (e) {
+      print(e);
+      print('获取用户信息失败');
+    }
+    ;
+
+    Get.dialog(
+      BuildPersonalInfoCard(
+        avatar: avatar,
+        username: username,
+        accountId: accountId,
+        description: description,
+        activity: activity,
+        gold: gold,
+        coupon: coupon,
+        onLevelTap: () => onLevelTap(accountId),
+        onFriendTap: () => onFriendTap(accountId),
+      ),
+      barrierDismissible: true,
+      barrierColor: Colors.black.withOpacity(0.001),
+    );
+  }
+
+  // 点击等级信息
+  void onLevelTap(String accountId) {
+    Get.toNamed('/Level', parameters: {'accountId': accountId});
+  }
+
+  // 点击添加好友
+  void onFriendTap(String accountId) {
+    if (GlobalData.userInfo['friends'].contains(accountId)) {
+      Get.dialog(
+        ShowMessageDialog(content: '你们已经是好友了'),
+        barrierDismissible: true,
+        barrierColor: Colors.transparent,
+      );
+      Future.delayed(Duration(seconds: 1), () {
+        Get.back();
+      });
+    } else {
+      final MyFriendsController myFriendsController = Get.find();
+      myFriendsController.request(accountId: accountId);
+    }
   }
 }

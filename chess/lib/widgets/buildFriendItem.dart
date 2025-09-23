@@ -9,10 +9,7 @@ Widget buildFriendItem(Map friend, dynamic controller) {
     decoration: BoxDecoration(
       color: const Color(0xFFFFF8E7), // 更浅的米色
       borderRadius: BorderRadius.circular(16),
-      border: Border.all(
-        color: const Color(0xFFA67B5B),
-        width: 3,
-      ), // 木色边框
+      border: Border.all(color: const Color(0xFFA67B5B), width: 3), // 木色边框
       boxShadow: [
         BoxShadow(
           color: Colors.brown.withValues(alpha: 0.4),
@@ -32,16 +29,18 @@ Widget buildFriendItem(Map friend, dynamic controller) {
               height: 50,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                border: Border.all(
-                  color: Colors.white,
-                  width: 2,
-                ),
+                border: Border.all(color: Colors.white, width: 2),
               ),
-              child: ClipOval(
-                child: Image.network(
-                  friend['avatar'] ??
-                      'https://binggan-1358387153.cos.ap-guangzhou.myqcloud.com/User/NotLogin.png',
-                  fit: BoxFit.cover,
+              child: GestureDetector(
+                onTap: () {
+                  controller.showPersonalInfo(friend['accountId']);
+                },
+                child: ClipOval(
+                  child: Image.network(
+                    friend['avatar'] ??
+                        'https://binggan-1358387153.cos.ap-guangzhou.myqcloud.com/User/NotLogin.png',
+                    fit: BoxFit.cover,
+                  ),
                 ),
               ),
             ),
@@ -79,8 +78,7 @@ Widget buildFriendItem(Map friend, dynamic controller) {
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFFA67B5B),
                 foregroundColor: Colors.white,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 0, vertical: 1),
+                padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 1),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(15),
                 ),
@@ -102,8 +100,7 @@ Widget buildFriendItem(Map friend, dynamic controller) {
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFFA67B5B),
                 foregroundColor: Colors.white,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 2, vertical: 1),
+                padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 1),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(15),
                 ),
