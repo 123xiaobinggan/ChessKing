@@ -1,7 +1,7 @@
 # ChessKing
 下棋App：具有象棋，围棋，军棋，五子棋四种棋类，并具有多种游戏模式。
 
-技术栈： flutter + getx + nodejs + mongoDB + socket.io + JPush + pikafish + 2核2G1M宽度Server
+技术栈： flutter + getx + nodejs + mongoDB + socket.io + JPush + pikafish + 2核2G1M宽带Server
 
 用户生态系统完整，有充值，编辑，活跃值等功能
 
@@ -28,7 +28,7 @@ English：
 # ChessKing
 A chess app with chess, go, military chess, and five chess. It has four chess classes and supports multiple game modes.
 
-Tech stack: flutter + getx + nodejs + mongoDB + socket.io + JPush + pikafish + 2-core 2G 1M width server
+Tech stack: flutter + getx + nodejs + mongoDB + socket.io + JPush + pikafish + 2-core 2G 1M bandwidth Server
 
 A complete user ecosystem is built, with recharge, editing, active value, etc. features.
 
