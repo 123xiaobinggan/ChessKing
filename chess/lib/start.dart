@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'pages/Enter/Login/login.dart';
@@ -69,8 +68,8 @@ class _SplashPageState extends State<SplashPage>
   }
 
   Future<void> checkUpdate() async {
-    PackageInfo packageInfo = await PackageInfo.fromPlatform();
-    String currentVersion = packageInfo.version;
+    GlobalData.packageInfo = await PackageInfo.fromPlatform();
+    String currentVersion = GlobalData.packageInfo.version;
     final completer = Completer<void>();
 
     try {
@@ -81,6 +80,7 @@ class _SplashPageState extends State<SplashPage>
       String url = response.data['data']['url'];
       print("最新版本: $latestVersion, 当前版本: $currentVersion, 下载地址: $url");
       GlobalData.version = response.data['data'];
+      GlobalData.downloadUrl = url;
       if (currentVersion != latestVersion) {
         print("需要更新");
         Future.microtask(() {
@@ -139,7 +139,7 @@ class AppUpdater {
     Get.dialog(
       Obx(
         () => AlertDialog(
-          title: Text('正在下载更新\n请打开加速器', textAlign: TextAlign.center),
+          title: Text('正在下载更新\n加速器更快', textAlign: TextAlign.center),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [

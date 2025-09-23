@@ -77,7 +77,7 @@ class RegisterController extends GetxController {
         // 显示错误提示
         '注册失败', // 标题
         '网络错误', // 内容
-        snackPosition: SnackPosition.BOTTOM, // 显示位置
+        snackPosition: SnackPosition.TOP, // 显示位置
       );
     }
   }

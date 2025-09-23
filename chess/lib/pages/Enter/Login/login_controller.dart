@@ -144,14 +144,14 @@ class LoginController extends GetxController {
         Get.snackbar(
           '登录失败',
           response.data['msg'],
-          snackPosition: SnackPosition.BOTTOM,
+          snackPosition: SnackPosition.TOP,
         );
         return;
       }
     } catch (e) {
       Get.back();
       print('Error: $e');
-      Get.snackbar('登录失败', '网络错误', snackPosition: SnackPosition.BOTTOM);
+      Get.snackbar('登录失败', '网络错误', snackPosition: SnackPosition.TOP);
       return;
     }
   }

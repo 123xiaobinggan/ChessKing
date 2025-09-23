@@ -1,5 +1,6 @@
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
+import '../../global/global_data.dart';
 import 'version_controller.dart';
 
 class Version extends StatelessWidget {
@@ -62,61 +63,95 @@ class Version extends StatelessWidget {
           ),
           Container(
             margin: const EdgeInsets.fromLTRB(20, 30, 20, 20),
-
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
               color: const Color(0xFFFFF8DC), // 米黄色背景
               borderRadius: BorderRadius.circular(16), // 圆角
             ),
             child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(height: 20),
-                  Text(
-                    "当前版本：v${controller.version}",
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.brown,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 20),
+                Text(
+                  "当前版本：v${GlobalData.packageInfo.version}",
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.brown,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  "最新版本：v${controller.version}",
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.brown,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                const Text(
+                  "更新内容：",
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.brown,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                ...controller.changelog.map(
+                  (log) => Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 4),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          "• ",
+                          style: TextStyle(fontSize: 16, color: Colors.black87),
+                        ),
+                        Expanded(
+                          child: Text(
+                            log,
+                            style: const TextStyle(fontSize: 16),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  const SizedBox(height: 20),
-                  const Text(
-                    "更新内容：",
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.brown,
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  ...controller.changelog.map(
-                    (log) => Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 4),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            "• ",
-                            style: TextStyle(
-                              fontSize: 16,
-                              color: Colors.black87,
-                            ),
-                          ),
-                          Expanded(
-                            child: Text(
-                              log,
-                              style: const TextStyle(fontSize: 16),
-                            ),
-                          ),
-                        ],
+                ),
+                const SizedBox(height: 20),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20), // 左右间距相同
+                  child: SizedBox(
+                    width: double.infinity, // 按钮铺满父容器（减去padding）
+                    child: ElevatedButton(
+                      onPressed: controller.isUpToDate
+                          ? null
+                          : controller.downloadUpdate, 
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.brown, // 棕色背景
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 15,
+                        ), // 垂直内边距
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12), // 圆角
+                          side: const BorderSide(color: Colors.brown, width: 2),
+                        ),
+                      ),
+                      child: Text(
+                        controller.isUpToDate ? '已是最新版本' : '立即更新', // 根据版本状态显示文本
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
                       ),
                     ),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
-          
+          ),
         ],
       ),
     );
