@@ -262,7 +262,7 @@ class ChineseChessBoardController extends GetxController {
 
     // 房间建立
     _roomJoinedSubscription = socketService.onRoomJoined.listen((data) {
-      // print('onRoomJoined,房间建立,${data}');
+      print('onRoomJoined,房间建立,${data}');
       roomId = data['roomId'];
       if (playerInfo['me']['accountId'] == data['inviter']['accountId']) {
         playerInfo['opponent']['accountId'].value =
@@ -539,6 +539,7 @@ class ChineseChessBoardController extends GetxController {
     roomId = '';
     moves.clear();
     availableMove.clear();
+    chatHistory.clear();
     myStepTime.value = stepTime.value;
     opponentStepTime.value = stepTime.value;
     playerInfo['me']['myTurn'].value = false;

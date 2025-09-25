@@ -273,15 +273,6 @@ class SocketService {
               data['deal'] = 'accept';
               dealInvitation(data);
               Get.back();
-              Get.toNamed(
-                '/ChineseChessBoard',
-                parameters: {
-                  'type': 'ChineseChessWithFriends',
-                  'accountId': data['inviterAccountId'],
-                  'gameTime': data['gameTime'].toString(),
-                  'stepTime': data['stepTime'].toString(),
-                },
-              );
             },
             onReject: () {
               data['deal'] = 'reject';
@@ -305,9 +296,27 @@ class SocketService {
 
     // 房间已加入
     _socket?.on('room_joined', (data) {
-      print('room_joined,房间建立,$data');
+      print('room_joined,房间建立');
+      _roomId = data['roomId'];
+      Get.toNamed(
+        '/ChineseChessBoard',
+        parameters: {
+          'type': 'ChineseChessWithFriends',
+          'accountId': data['inviter']['accountId'],
+          'gameTime': data['gameTime'].toString(),
+          'stepTime':
+              (data['gameTime'] == 1200 || data['gameTime'] == 900
+                      ? 60
+                      : data['gameTime'] == 600
+                      ? 30
+                      : 15)
+                  .toString(),
+        },
+      );
       if (_roomJoinedController?.isClosed == false) {
-        _roomJoinedController?.add(data);
+        Future.delayed((const Duration(milliseconds: 50)), () {
+          _roomJoinedController?.add(data);
+        });
       }
     });
 

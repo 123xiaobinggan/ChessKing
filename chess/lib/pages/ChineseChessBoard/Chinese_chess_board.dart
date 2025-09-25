@@ -115,10 +115,13 @@ class ChineseChessBoard extends StatelessWidget {
                         controller.playerInfo['opponent']?['username']?.value ??
                         '',
                     accountId:
-                        controller.playerInfo['opponent']?['accountId']?.value ??
+                        controller
+                            .playerInfo['opponent']?['accountId']
+                            ?.value ??
                         '',
                     level:
-                        controller.playerInfo['opponent']?['level']?.value ?? '',
+                        controller.playerInfo['opponent']?['level']?.value ??
+                        '',
                     isMyTurn: controller.playerInfo['opponent']['myTurn'],
 
                     imagePath:
@@ -255,121 +258,7 @@ class ChineseChessBoard extends StatelessWidget {
                         bottom:
                             MediaQuery.of(context).viewInsets.bottom / 2 + 130,
                         left: 66,
-                        child: ChatPanel(controller: controller)
-                        // child: Container(
-                        //   width: 300,
-                        //   padding: const EdgeInsets.all(12),
-                        //   decoration: BoxDecoration(
-                        //     gradient: const LinearGradient(
-                        //       colors: [Color(0xFFF5DEB3), Color(0xFFEED7A1)],
-                        //       begin: Alignment.topLeft,
-                        //       end: Alignment.bottomRight,
-                        //     ),
-                        //     boxShadow: [
-                        //       BoxShadow(
-                        //         color: Colors.black26,
-                        //         blurRadius: 8,
-                        //         offset: Offset(2, 4),
-                        //       ),
-                        //     ],
-                        //     borderRadius: BorderRadius.circular(12),
-                        //   ),
-                        //   child: Column(
-                        //     mainAxisSize: MainAxisSize.min,
-                        //     children: [
-                        //       // 顶部输入框和发送按钮
-                        //       Row(
-                        //         children: [
-                        //           Expanded(
-                        //             child: TextField(
-                        //               controller:
-                        //                   controller.chatInputController,
-                        //               maxLines: 1,
-                        //               style: TextStyle(color: Colors.black87),
-                        //               decoration: InputDecoration(
-                        //                 hintText: '输入聊天内容...',
-                        //                 hintStyle: TextStyle(
-                        //                   color: Colors.grey,
-                        //                 ),
-                        //                 filled: true,
-                        //                 fillColor: Colors.white,
-                        //                 contentPadding: EdgeInsets.symmetric(
-                        //                   vertical: 0,
-                        //                   horizontal: 6,
-                        //                 ),
-                        //                 border: OutlineInputBorder(
-                        //                   borderRadius: BorderRadius.circular(
-                        //                     8,
-                        //                   ),
-                        //                   borderSide: BorderSide.none,
-                        //                 ),
-                        //               ),
-                        //             ),
-                        //           ),
-                        //           const SizedBox(width: 8),
-                        //           IconButton(
-                        //             icon: Icon(Icons.send, color: Colors.brown),
-                        //             onPressed: () {
-                        //               controller.sendMessages(
-                        //                 controller.chatInputController.text,
-                        //               );
-                        //             },
-                        //           ),
-                        //         ],
-                        //       ),
-                        //       const SizedBox(height: 12),
-                        //       // 预设对话语句
-                        //       Container(
-                        //         height: 100, // 控制最大高度，可调
-                        //         margin: const EdgeInsets.only(right: 20),
-                        //         // padding: const EdgeInsets.only(right: 5),
-                        //         child: Scrollbar(
-                        //           thumbVisibility: true,
-                        //           interactive: true,
-                        //           radius: const Radius.circular(8),
-                        //           child: SingleChildScrollView(
-                        //             child: Wrap(
-                        //               spacing: 4,
-                        //               runSpacing: 8,
-                        //               children: [
-                        //                 chatPhraseChip('棋逢对手', () {
-                        //                   controller.sendMessages('棋逢对手');
-                        //                 }),
-                        //                 chatPhraseChip('手下留情', () {
-                        //                   controller.sendMessages('手下留情');
-                        //                 }),
-                        //                 chatPhraseChip('好棋!', () {
-                        //                   controller.sendMessages('好棋!');
-                        //                 }),
-                        //                 chatPhraseChip('可以快一点吗，我等得花都谢了', () {
-                        //                   controller.sendMessages('可以快一点吗，我等得花都谢了');
-                        //                 }),
-                        //                 chatPhraseChip('等一下,我思考下', () {
-                        //                   controller.sendMessages('等一下,我思考下');
-                        //                 }),
-                        //                 chatPhraseChip('一着不慎,满盘皆输', () {
-                        //                   controller.sendMessages('一着不慎,满盘皆输');
-                        //                 }),
-                        //                 chatPhraseChip('再来一局!', () {
-                        //                   controller.sendMessages('再来一局!');
-                        //                 }),
-                        //                 chatPhraseChip('真是妙手!', () {
-                        //                   controller.sendMessages('真是妙手!');
-                        //                 }),
-                        //                 chatPhraseChip('奇哉妙也!', () {
-                        //                   controller.sendMessages('奇哉妙也!');
-                        //                 }),
-                        //                 chatPhraseChip('你是职业的吗?', () {
-                        //                   controller.sendMessages('你是职业的吗?');
-                        //                 }),
-                        //               ],
-                        //             ),
-                        //           ),
-                        //         ),
-                        //       ),
-                        //     ],
-                        //   ),
-                        // ),
+                        child: ChatPanel(controller: controller),
                       )
                     : const SizedBox.shrink(),
               ),

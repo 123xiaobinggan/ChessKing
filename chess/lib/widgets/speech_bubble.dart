@@ -10,13 +10,12 @@ class SpeechBubble extends StatelessWidget {
   Widget build(BuildContext context) {
     return CustomPaint(
       painter: BubblePainter(isMyself: isMyself),
-      child: Padding(
-        padding: EdgeInsets.fromLTRB(10, 10, 10, 10),
-        child: IntrinsicWidth(
-          child: Text(
-            text,
-            style: const TextStyle(color: Colors.black87, fontSize: 16),
-          ),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        constraints: const BoxConstraints(minWidth: 50, maxWidth: 250),
+        child: Text(
+          text,
+          style: const TextStyle(color: Colors.black87, fontSize: 16),
         ),
       ),
     );
@@ -39,33 +38,26 @@ class BubblePainter extends CustomPainter {
       ..style = PaintingStyle.fill
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 1);
 
-    final path = Path();
-
     const radius = 15.0;
-    final rectHeight = size.height - 10;
-
-    // 画圆角矩形主体
-    path.addRRect(
-      RRect.fromRectAndRadius(
-        Rect.fromLTWH(0, (size.height-rectHeight)/2, size.width, rectHeight),
-        const Radius.circular(radius),
-      ),
+    final rect = RRect.fromRectAndRadius(
+      Rect.fromLTWH(0, 0, size.width, size.height),
+      const Radius.circular(radius),
     );
 
-    // 添加尖角路径
+    final path = Path()..addRRect(rect);
+
     if (!isMyself) {
-      // 左上角尖角
+      // 左边小三角
       path.moveTo(10, 10);
-      path.lineTo(10, -5); // 尖角顶点
+      path.lineTo(10, -10);
       path.lineTo(30, 10);
     } else {
-      // 右下角尖角
-      path.moveTo(size.width - 10, rectHeight);
-      path.lineTo(size.width - 10, size.height+5); // 尖角顶点
-      path.lineTo(size.width - 30, rectHeight);
+      // 右边小三角
+      path.moveTo(size.width - 10, 40);
+      path.lineTo(size.width - 8, 50);
+      path.lineTo(size.width - 30, 40);
     }
 
-    path.close();
     canvas.drawPath(path, paint);
   }
 
