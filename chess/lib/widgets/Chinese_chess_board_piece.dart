@@ -256,8 +256,8 @@ class ChineseChessBoardWithPieces extends StatelessWidget {
 
                           GameResultOverlay(
                             result: controller.result,
-                            me: controller.playInfo['me'],
-                            opponent: controller.playInfo['opponent'],
+                            me: controller.playerInfo['me'],
+                            opponent: controller.playerInfo['opponent'],
                             type: transform(controller.type),
                             onRestart: () => controller.startMatching(),
                           ),

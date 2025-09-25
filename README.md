@@ -31,7 +31,7 @@ A chess app with chess, go, military chess, and five chess. It has four chess cl
 Tech stack: flutter + getx + nodejs + mongoDB + socket.io + JPush + pikafish + 2-core 2G 1M bandwidth Server
 
 A complete user ecosystem is built, with recharge, editing, active value, etc. features.
-
+netsh interface show interface
 Has friend function, can invite friends to play online, or discover and add strangers.
 
 A robust level system.

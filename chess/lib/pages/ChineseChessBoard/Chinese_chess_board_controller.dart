@@ -39,7 +39,7 @@ class ChineseChessBoardController extends GetxController {
   RxList<Point> availableMove = <Point>[].obs; // 记录可移动点
 
   // 游戏信息
-  RxMap<String, dynamic> playInfo = {
+  RxMap<String, dynamic> playerInfo = {
     "me": {
       "accountId": GlobalData.userInfo['accountId'],
       'username': GlobalData.userInfo['username'],
@@ -67,6 +67,9 @@ class ChineseChessBoardController extends GetxController {
   // 棋子
   RxList<ChineseChessPieceModel> pieces = <ChineseChessPieceModel>[].obs;
   final chatInputController = TextEditingController();
+  final RxInt currentLength = 0.obs; // 输入框长度
+  final RxList<Map<String, dynamic>> chatHistory =
+      <Map<String, dynamic>>[].obs; // 聊天记录
 
   var stage = GameStage.idle.obs; // 游戏阶段
   RxInt gameTime = 0.obs;
@@ -101,8 +104,11 @@ class ChineseChessBoardController extends GetxController {
   StreamSubscription<dynamic>? _reconnectSubscription;
   StreamSubscription<dynamic>? _opponentReconnectSubscription;
   StreamSubscription<dynamic>? _opponentDealInvitationSubscription;
-  StreamSubscription<dynamic>? _opponentSendInformationSubscription;
   StreamSubscription<dynamic>? _opponentReadySubscription;
+  StreamSubscription<dynamic>? _roomJoinedSubscription;
+  StreamSubscription<dynamic>? _receiveMessagesSubscription;
+  StreamSubscription<dynamic>? _receiveActionsSubscription;
+  StreamSubscription<dynamic>? _opponentLeaveSubscription;
 
   @override
   void onInit() {
@@ -111,7 +117,7 @@ class ChineseChessBoardController extends GetxController {
 
     socketService.initSocket(); // 初始化 SocketService
 
-    playInfo['me']['myTurn'].listen((value) {
+    playerInfo['me']['myTurn'].listen((value) {
       if (stage.value != GameStage.playing) {
         return;
       }
@@ -119,22 +125,22 @@ class ChineseChessBoardController extends GetxController {
         print('我方回合');
         myStepTime.value = min(
           stepTime.value,
-          playInfo['me']['timeLeft'].value,
+          playerInfo['me']['timeLeft'].value,
         );
-        startTimer(playInfo['me']['timeLeft'], myStepTime, true);
+        startTimer(playerInfo['me']['timeLeft'], myStepTime, true);
       }
     });
 
-    playInfo['opponent']['myTurn'].listen((value) {
+    playerInfo['opponent']['myTurn'].listen((value) {
       if (value == true) {
         print('对方回合');
         requestUndoCnt = 0;
         requestDrawCnt = 0;
         opponentStepTime.value = min(
           stepTime.value,
-          playInfo['opponent']['timeLeft'].value,
+          playerInfo['opponent']['timeLeft'].value,
         );
-        startTimer(playInfo['opponent']['timeLeft'], opponentStepTime, false);
+        startTimer(playerInfo['opponent']['timeLeft'], opponentStepTime, false);
         if (placedPiece.value.type != '') {
           print('发送我方落子');
           sendMyMove(
@@ -204,85 +210,35 @@ class ChineseChessBoardController extends GetxController {
       });
     });
 
-    //对方进房
+    // 对方处理邀请
     _opponentDealInvitationSubscription = socketService.onOpponentDealInvitation
-        .listen((data) async {
-          print('onOpponentDealInvitation,对方已处理邀请,${data}');
+        .listen((data) {
+          print('onOpponentDealInvitation,对方处理邀请,${data}');
           if (data['deal'] == 'reject') {
             Get.dialog(
               ShowMessageDialog(content: '对方拒绝了你的邀请'),
               barrierDismissible: false,
               barrierColor: Colors.transparent,
             );
-            Future.delayed(const Duration(milliseconds: 1500), () {
-              Get.back();
-            });
-          } else if (data['deal'] == 'playing') {
+          } else {
             Get.dialog(
-              ShowMessageDialog(content: "对方在对局中"),
+              ShowMessageDialog(content: '对方在对局中'),
               barrierDismissible: false,
               barrierColor: Colors.transparent,
             );
-            Future.delayed(const Duration(milliseconds: 1500), () {
-              Get.back();
-            });
-          } else {
-            socketService.sendOpponentInformation(data);
-            playInfo['opponent']['accountId'].value = data['inviteeAccountId'];
-            Dio dio = new Dio();
-            Map<String, dynamic> params = {
-              'accountId': data['inviteeAccountId'],
-            };
-            try {
-              final res = await dio.post(
-                GlobalData.url + '/GetUserInfo',
-                data: params,
-              );
-              if (res.data['code'] == 0) {
-                playInfo['opponent']['username'].value = res.data['username'];
-                playInfo['opponent']['avatar'].value = res.data['avatar'];
-                playInfo['opponent']['level'].value =
-                    res.data['ChineseChess']['level'];
-              }
-            } catch (e) {
-              print(e);
-              Get.dialog(
-                ShowMessageDialog(content: '获取用户信息失败'),
-                barrierDismissible: false,
-                barrierColor: Colors.transparent,
-              );
-              Future.delayed(const Duration(milliseconds: 1500), () {
-                Get.back();
-              });
-            }
           }
-        });
-
-    //进房收取对方信息
-    _opponentSendInformationSubscription = socketService
-        .onOpponentSendInformation
-        .listen((_) async {
-          print('onOpponentSendInformation,收到对方信息');
-          Dio dio = new Dio();
-          try {
-            final res = await dio.post(
-              GlobalData.url + '/GetUserInfo',
-              data: {'accountId': opponentAccountId},
-            );
-            if (res.data['code'] == 0) {
-              playInfo['opponent']['username'].value = res.data['username'];
-              playInfo['opponent']['username'].value = res.data['username'];
-              playInfo['opponent']['avatar'].value = res.data['avatar'];
-              playInfo['opponent']['level'].value =
-                  res.data['ChineseChess']['level'];
-            }
-          } catch (e) {
-            print('e,$e');
-          }
+          Future.delayed(const Duration(milliseconds: 1500), () {
+            Get.back();
+          });
         });
 
     // 对方准备
-    _opponentReadySubscription = socketService.onOpponentReady.listen((_) {
+    _opponentReadySubscription = socketService.onOpponentReady.listen((
+      accountId,
+    ) {
+      if (accountId != playerInfo['opponent']['accountId'].value) {
+        return;
+      }
       print('onOpponentReady,对方准备');
       Get.dialog(
         ShowMessageDialog(content: '对方已准备'),
@@ -293,6 +249,49 @@ class ChineseChessBoardController extends GetxController {
         Get.back();
       });
     });
+
+    // 对方离开房间
+    _opponentLeaveSubscription = socketService.onOpponentLeave.listen((_) {
+      print('onOpponentLeave,对方离开房间');
+      playerInfo['opponent']['accountId'].value = '空座';
+      playerInfo['opponent']['username'].value = '空座';
+      playerInfo['opponent']['avatar'].value =
+          'https://binggan-1358387153.cos.ap-guangzhou.myqcloud.com/User/NotLogin.png';
+      playerInfo['opponent']['level'].value = '1-1';
+    });
+
+    // 房间建立
+    _roomJoinedSubscription = socketService.onRoomJoined.listen((data) {
+      // print('onRoomJoined,房间建立,${data}');
+      roomId = data['roomId'];
+      if (playerInfo['me']['accountId'] == data['inviter']['accountId']) {
+        playerInfo['opponent']['accountId'].value =
+            data['invitee']['accountId'];
+        playerInfo['opponent']['username'].value = data['invitee']['username'];
+        playerInfo['opponent']['avatar'].value = data['invitee']['avatar'];
+        playerInfo['opponent']['level'].value = data['invitee']['level'];
+      } else {
+        playerInfo['opponent']['accountId'].value =
+            data['inviter']['accountId'];
+        playerInfo['opponent']['username'].value = data['inviter']['username'];
+        playerInfo['opponent']['avatar'].value = data['inviter']['avatar'];
+        playerInfo['opponent']['level'].value = data['inviter']['level'];
+      }
+    });
+
+    //收听消息
+    _receiveMessagesSubscription = socketService.onReceiveMessages.listen((
+      data,
+    ) {
+      print('onReceiveMessages,收到消息,${data}');
+      receiveText(data);
+    });
+
+    //收听动作
+    _receiveActionsSubscription = socketService.onReceiveActions.listen((data) {
+      print('onReceiveActions,收到动作,${data}');
+      receiveActions(data);
+    });
   }
 
   @override
@@ -301,11 +300,13 @@ class ChineseChessBoardController extends GetxController {
     stopTimer();
     socketService.overGame();
     GlobalData.isPlaying = false;
-    if (stage.value == GameStage.matching) {
-      socketService.cancelMatch();
-    }
+    socketService.cancelMatch();
     if (stage.value == GameStage.playing) {
-      sendMyMove('认输', Point(row: -1, col: -1), Point(row: -1, col: -1));
+      socketService.sendActions({
+        'accountId': playerInfo['me']['accountId'],
+        'type': "认输",
+        'roomId': roomId,
+      });
       overGame('败', 'surrender');
     } else {
       Get.back();
@@ -324,10 +325,16 @@ class ChineseChessBoardController extends GetxController {
     _matchSubscription = null;
     _opponentDealInvitationSubscription?.cancel();
     _opponentDealInvitationSubscription = null;
-    _opponentSendInformationSubscription?.cancel();
-    _opponentSendInformationSubscription = null;
     _opponentReadySubscription?.cancel();
     _opponentReadySubscription = null;
+    _opponentLeaveSubscription?.cancel();
+    _opponentLeaveSubscription = null;
+    _roomJoinedSubscription?.cancel();
+    _roomJoinedSubscription = null;
+    _receiveMessagesSubscription?.cancel();
+    _receiveMessagesSubscription = null;
+    _receiveActionsSubscription?.cancel();
+    _receiveActionsSubscription = null;
     _moveSubscription?.cancel();
     _moveSubscription = null;
     _moveListenerInitialized = false;
@@ -350,178 +357,178 @@ class ChineseChessBoardController extends GetxController {
   // 初始化棋子
   void initChessPiece() {
     print(
-      '初始化棋子,${playInfo['me']['isRed'].value},${playInfo['opponent']['isRed'].value}',
+      '初始化棋子,${playerInfo['me']['isRed'].value},${playerInfo['opponent']['isRed'].value}',
     );
     pieces.clear();
     pieces.addAll([
       // 上方
       ChineseChessPieceModel(
         type: '車',
-        isRed: playInfo['opponent']['isRed'].value,
+        isRed: playerInfo['opponent']['isRed'].value,
         pos: Point(row: 0, col: 0),
       ),
       ChineseChessPieceModel(
         type: '馬',
-        isRed: playInfo['opponent']['isRed'].value,
+        isRed: playerInfo['opponent']['isRed'].value,
         pos: Point(row: 0, col: 1),
       ),
       ChineseChessPieceModel(
-        type: playInfo['opponent']['isRed'].value ? '相' : '象',
-        isRed: playInfo['opponent']['isRed'].value,
+        type: playerInfo['opponent']['isRed'].value ? '相' : '象',
+        isRed: playerInfo['opponent']['isRed'].value,
         pos: Point(row: 0, col: 2),
       ),
       ChineseChessPieceModel(
         type: '仕',
-        isRed: playInfo['opponent']['isRed'].value,
+        isRed: playerInfo['opponent']['isRed'].value,
         pos: Point(row: 0, col: 3),
       ),
       ChineseChessPieceModel(
-        type: playInfo['opponent']['isRed'].value ? '帥' : '將',
-        isRed: playInfo['opponent']['isRed'].value,
+        type: playerInfo['opponent']['isRed'].value ? '帥' : '將',
+        isRed: playerInfo['opponent']['isRed'].value,
         pos: Point(row: 0, col: 4),
       ),
       ChineseChessPieceModel(
         type: '仕',
-        isRed: playInfo['opponent']['isRed'].value,
+        isRed: playerInfo['opponent']['isRed'].value,
         pos: Point(row: 0, col: 5),
       ),
       ChineseChessPieceModel(
-        type: playInfo['opponent']['isRed'].value ? '相' : '象',
-        isRed: playInfo['opponent']['isRed'].value,
+        type: playerInfo['opponent']['isRed'].value ? '相' : '象',
+        isRed: playerInfo['opponent']['isRed'].value,
         pos: Point(row: 0, col: 6),
       ),
       ChineseChessPieceModel(
         type: '馬',
-        isRed: playInfo['opponent']['isRed'].value,
+        isRed: playerInfo['opponent']['isRed'].value,
         pos: Point(row: 0, col: 7),
       ),
       ChineseChessPieceModel(
         type: '車',
-        isRed: playInfo['opponent']['isRed'].value,
+        isRed: playerInfo['opponent']['isRed'].value,
         pos: Point(row: 0, col: 8),
       ),
       ChineseChessPieceModel(
         type: '炮',
-        isRed: playInfo['opponent']['isRed'].value,
+        isRed: playerInfo['opponent']['isRed'].value,
         pos: Point(row: 2, col: 1),
       ),
       ChineseChessPieceModel(
         type: '炮',
-        isRed: playInfo['opponent']['isRed'].value,
+        isRed: playerInfo['opponent']['isRed'].value,
         pos: Point(row: 2, col: 7),
       ),
       ChineseChessPieceModel(
-        type: playInfo['opponent']['isRed'].value ? '兵' : '卒',
-        isRed: playInfo['opponent']['isRed'].value,
+        type: playerInfo['opponent']['isRed'].value ? '兵' : '卒',
+        isRed: playerInfo['opponent']['isRed'].value,
         pos: Point(row: 3, col: 0),
       ),
       ChineseChessPieceModel(
-        type: playInfo['opponent']['isRed'].value ? '兵' : '卒',
-        isRed: playInfo['opponent']['isRed'].value,
+        type: playerInfo['opponent']['isRed'].value ? '兵' : '卒',
+        isRed: playerInfo['opponent']['isRed'].value,
         pos: Point(row: 3, col: 2),
       ),
       ChineseChessPieceModel(
-        type: playInfo['opponent']['isRed'].value ? '兵' : '卒',
-        isRed: playInfo['opponent']['isRed'].value,
+        type: playerInfo['opponent']['isRed'].value ? '兵' : '卒',
+        isRed: playerInfo['opponent']['isRed'].value,
         pos: Point(row: 3, col: 4),
       ),
       ChineseChessPieceModel(
-        type: playInfo['opponent']['isRed'].value ? '兵' : '卒',
-        isRed: playInfo['opponent']['isRed'].value,
+        type: playerInfo['opponent']['isRed'].value ? '兵' : '卒',
+        isRed: playerInfo['opponent']['isRed'].value,
         pos: Point(row: 3, col: 6),
       ),
       ChineseChessPieceModel(
-        type: playInfo['opponent']['isRed'].value ? '兵' : '卒',
-        isRed: playInfo['opponent']['isRed'].value,
+        type: playerInfo['opponent']['isRed'].value ? '兵' : '卒',
+        isRed: playerInfo['opponent']['isRed'].value,
         pos: Point(row: 3, col: 8),
       ),
 
       // 下方
       ChineseChessPieceModel(
         type: '車',
-        isRed: playInfo['me']['isRed'].value,
+        isRed: playerInfo['me']['isRed'].value,
         pos: Point(row: 9, col: 0),
       ),
       ChineseChessPieceModel(
         type: '馬',
-        isRed: playInfo['me']['isRed'].value,
+        isRed: playerInfo['me']['isRed'].value,
         pos: Point(row: 9, col: 1),
       ),
       ChineseChessPieceModel(
-        type: playInfo['me']['isRed'].value ? '相' : '象',
-        isRed: playInfo['me']['isRed'].value,
+        type: playerInfo['me']['isRed'].value ? '相' : '象',
+        isRed: playerInfo['me']['isRed'].value,
         pos: Point(row: 9, col: 2),
       ),
       ChineseChessPieceModel(
         type: '仕',
-        isRed: playInfo['me']['isRed'].value,
+        isRed: playerInfo['me']['isRed'].value,
         pos: Point(row: 9, col: 3),
       ),
       ChineseChessPieceModel(
-        type: playInfo['me']['isRed'].value ? '帥' : '將',
-        isRed: playInfo['me']['isRed'].value,
+        type: playerInfo['me']['isRed'].value ? '帥' : '將',
+        isRed: playerInfo['me']['isRed'].value,
         pos: Point(row: 9, col: 4),
       ),
       ChineseChessPieceModel(
         type: '仕',
-        isRed: playInfo['me']['isRed'].value,
+        isRed: playerInfo['me']['isRed'].value,
         pos: Point(row: 9, col: 5),
       ),
       ChineseChessPieceModel(
-        type: playInfo['me']['isRed'].value ? '相' : '象',
-        isRed: playInfo['me']['isRed'].value,
+        type: playerInfo['me']['isRed'].value ? '相' : '象',
+        isRed: playerInfo['me']['isRed'].value,
         pos: Point(row: 9, col: 6),
       ),
       ChineseChessPieceModel(
         type: '馬',
-        isRed: playInfo['me']['isRed'].value,
+        isRed: playerInfo['me']['isRed'].value,
         pos: Point(row: 9, col: 7),
       ),
       ChineseChessPieceModel(
         type: '車',
-        isRed: playInfo['me']['isRed'].value,
+        isRed: playerInfo['me']['isRed'].value,
         pos: Point(row: 9, col: 8),
       ),
       ChineseChessPieceModel(
         type: '炮',
-        isRed: playInfo['me']['isRed'].value,
+        isRed: playerInfo['me']['isRed'].value,
         pos: Point(row: 7, col: 1),
       ),
       ChineseChessPieceModel(
         type: '炮',
-        isRed: playInfo['me']['isRed'].value,
+        isRed: playerInfo['me']['isRed'].value,
         pos: Point(row: 7, col: 7),
       ),
       ChineseChessPieceModel(
-        type: playInfo['me']['isRed'].value ? '兵' : '卒',
-        isRed: playInfo['me']['isRed'].value,
+        type: playerInfo['me']['isRed'].value ? '兵' : '卒',
+        isRed: playerInfo['me']['isRed'].value,
         pos: Point(row: 6, col: 0),
       ),
       ChineseChessPieceModel(
-        type: playInfo['me']['isRed'].value ? '兵' : '卒',
-        isRed: playInfo['me']['isRed'].value,
+        type: playerInfo['me']['isRed'].value ? '兵' : '卒',
+        isRed: playerInfo['me']['isRed'].value,
         pos: Point(row: 6, col: 2),
       ),
       ChineseChessPieceModel(
-        type: playInfo['me']['isRed'].value ? '兵' : '卒',
-        isRed: playInfo['me']['isRed'].value,
+        type: playerInfo['me']['isRed'].value ? '兵' : '卒',
+        isRed: playerInfo['me']['isRed'].value,
         pos: Point(row: 6, col: 4),
       ),
       ChineseChessPieceModel(
-        type: playInfo['me']['isRed'].value ? '兵' : '卒',
-        isRed: playInfo['me']['isRed'].value,
+        type: playerInfo['me']['isRed'].value ? '兵' : '卒',
+        isRed: playerInfo['me']['isRed'].value,
         pos: Point(row: 6, col: 6),
       ),
       ChineseChessPieceModel(
-        type: playInfo['me']['isRed'].value ? '兵' : '卒',
-        isRed: playInfo['me']['isRed'].value,
+        type: playerInfo['me']['isRed'].value ? '兵' : '卒',
+        isRed: playerInfo['me']['isRed'].value,
         pos: Point(row: 6, col: 8),
       ),
     ]);
   }
 
   // 初始化游戏信息
-  void initPlayInfo() {
+  void initplayerInfo() {
     if (!_moveListenerInitialized) {
       print("监听棋子移动事件");
       _moveSubscription = socketService.onMove.listen((moveData) {
@@ -534,18 +541,18 @@ class ChineseChessBoardController extends GetxController {
     availableMove.clear();
     myStepTime.value = stepTime.value;
     opponentStepTime.value = stepTime.value;
-    playInfo['me']['myTurn'].value = false;
-    playInfo['opponent']['myTurn'].value = false;
-    playInfo['me']['showMessage'].value = false;
-    playInfo['opponent']['showMessage'].value = false;
-    playInfo['me']['timeLeft'].value = gameTime.value;
-    playInfo['me']['timeLeft'].value = gameTime.value;
-    playInfo['opponent']['timeLeft'].value = gameTime.value;
-    playInfo['opponent']['accountId'].value = opponentAccountId;
-    print('${playInfo['opponent']['accountId'].value}');
+    playerInfo['me']['myTurn'].value = false;
+    playerInfo['opponent']['myTurn'].value = false;
+    playerInfo['me']['showMessage'].value = false;
+    playerInfo['opponent']['showMessage'].value = false;
+    playerInfo['me']['timeLeft'].value = gameTime.value;
+    playerInfo['me']['timeLeft'].value = gameTime.value;
+    playerInfo['opponent']['timeLeft'].value = gameTime.value;
+    playerInfo['opponent']['accountId'].value = opponentAccountId;
+    print('${playerInfo['opponent']['accountId'].value}');
 
     print(
-      '${playInfo['me']['timeLeft'].value},${playInfo['opponent']['timeLeft'].value}',
+      '${playerInfo['me']['timeLeft'].value},${playerInfo['opponent']['timeLeft'].value}',
     );
     print('${myStepTime.value},${opponentStepTime.value}');
   }
@@ -632,7 +639,7 @@ class ChineseChessBoardController extends GetxController {
   }
 
   // 发送消息
-  void sendChat(String text) {
+  void sendMessages(String text) {
     chatInputController.text = text;
     showChat.value = false;
     showMyMessage.value = true;
@@ -642,18 +649,23 @@ class ChineseChessBoardController extends GetxController {
       chatInputController.clear();
     });
 
-    sendMyMove(text, Point(row: -1, col: -1), Point(row: -1, col: -1));
+    socketService.sendMessages({
+      'accountId': GlobalData.userInfo['accountId'],
+      'text': text,
+      'roomId': roomId,
+    });
+    chatHistory.add({'accountId': playerInfo['me']['accountId'], 'text': text});
   }
 
   // 选择棋子
   void selectPiece(ChineseChessPieceModel piece) async {
-    if (!(playInfo['me']['myTurn'].value == true &&
-            piece.isRed == playInfo['me']['isRed'].value ||
-        playInfo['opponent']['myTurn'].value == true &&
-            piece.isRed == playInfo['opponent']['isRed'].value)) {
+    if (!(playerInfo['me']['myTurn'].value == true &&
+            piece.isRed == playerInfo['me']['isRed'].value ||
+        playerInfo['opponent']['myTurn'].value == true &&
+            piece.isRed == playerInfo['opponent']['isRed'].value)) {
       return;
     }
-    if (piece.isRed != playInfo['me']['isRed'].value) {
+    if (piece.isRed != playerInfo['me']['isRed'].value) {
       return;
     }
     selectedPiece.value = piece;
@@ -714,7 +726,7 @@ class ChineseChessBoardController extends GetxController {
     turnTransition(); // 切换回合
 
     // 判断是否处于绝杀状态
-    isInCheckMateNotifier.value = checkmate(playInfo['opponent']);
+    isInCheckMateNotifier.value = checkmate(playerInfo['opponent']);
     if (isInCheckMateNotifier.value == true) {
       Future.delayed(Duration(milliseconds: 3500), () {
         overGame('胜', 'checkmate');
@@ -725,7 +737,7 @@ class ChineseChessBoardController extends GetxController {
     // 判断是否将军;
     isInCheckNotifier.value = isInCheckMateNotifier.value
         ? false
-        : check(playInfo['opponent'], pieces, chessBoard);
+        : check(playerInfo['opponent'], pieces, chessBoard);
 
     print('是否我方绝杀: ${isInCheckMateNotifier.value}');
     print('是否我方将军: ${isInCheckNotifier.value}');
@@ -751,7 +763,7 @@ class ChineseChessBoardController extends GetxController {
     }
 
     // 判断是否处于绝杀状态
-    isInCheckMateNotifier.value = checkmate(playInfo['me']);
+    isInCheckMateNotifier.value = checkmate(playerInfo['me']);
     print('是否对方绝杀: ${isInCheckMateNotifier.value}');
     if (isInCheckMateNotifier.value == true) {
       Future.delayed(Duration(milliseconds: 3500), () {
@@ -761,7 +773,7 @@ class ChineseChessBoardController extends GetxController {
     }
 
     // 判断是否将军;
-    isInCheckNotifier.value = check(playInfo['me'], pieces, chessBoard);
+    isInCheckNotifier.value = check(playerInfo['me'], pieces, chessBoard);
     print('是否对方将军: ${isInCheckNotifier.value}');
   }
 
@@ -1012,7 +1024,7 @@ class ChineseChessBoardController extends GetxController {
         }
         break;
       case '兵':
-        if (playInfo['me']['isRed'] == true) {
+        if (playerInfo['me']['isRed'] == true) {
           List<int> drow = [-1, 0, 0];
           List<int> dcol = [0, 1, -1];
           for (int i = 0; i < 3; i++) {
@@ -1028,10 +1040,26 @@ class ChineseChessBoardController extends GetxController {
               }
             }
           }
+        } else {
+          List<int> drow = [1, 0, 0];
+          List<int> dcol = [0, 1, -1];
+          for (int i = 0; i < 3; i++) {
+            int row = drow[i] + piece.pos.row;
+            int col = dcol[i] + piece.pos.col;
+            if (row >= 0 && row <= 9 && col >= 0 && col < 9) {
+              if (row == piece.pos.row) {
+                if (row >= 5) {
+                  canMove.add(Point(row: row, col: col));
+                }
+              } else {
+                canMove.add(Point(row: row, col: col));
+              }
+            }
+          }
         }
         break;
       case '卒':
-        if (playInfo['me']['isRed'] == false) {
+        if (playerInfo['me']['isRed'] == false) {
           List<int> drow = [-1, 0, 0];
           List<int> dcol = [0, 1, -1];
           for (int i = 0; i < 3; i++) {
@@ -1040,6 +1068,22 @@ class ChineseChessBoardController extends GetxController {
             if (row >= 0 && row <= 9 && col >= 0 && col < 9) {
               if (row == piece.pos.row) {
                 if (row <= 4) {
+                  canMove.add(Point(row: row, col: col));
+                }
+              } else {
+                canMove.add(Point(row: row, col: col));
+              }
+            }
+          }
+        } else {
+          List<int> drow = [1, 0, 0];
+          List<int> dcol = [0, 1, -1];
+          for (int i = 0; i < 3; i++) {
+            int row = drow[i] + piece.pos.row;
+            int col = dcol[i] + piece.pos.col;
+            if (row >= 0 && row <= 9 && col >= 0 && col < 9) {
+              if (row == piece.pos.row) {
+                if (row >= 5) {
                   canMove.add(Point(row: row, col: col));
                 }
               } else {
@@ -1143,9 +1187,9 @@ class ChineseChessBoardController extends GetxController {
     emulatePieces(prePieces, preChessBoard, piece, point);
 
     bool isInCheck = check(
-      playInfo['me']['myTurn'].value == true
-          ? playInfo['me']
-          : playInfo['opponent'],
+      playerInfo['me']['myTurn'].value == true
+          ? playerInfo['me']
+          : playerInfo['opponent'],
       prePieces,
       preChessBoard,
     );
@@ -1191,7 +1235,7 @@ class ChineseChessBoardController extends GetxController {
   // 开始匹配
   void startMatching() async {
     stage.value = GameStage.matching;
-    initPlayInfo();
+    initplayerInfo();
 
     // 等待一次匹配成功
     _matchSubscription?.cancel();
@@ -1210,16 +1254,16 @@ class ChineseChessBoardController extends GetxController {
   // 匹配请求
   void matching() async {
     print('开始匹配');
-    if(opponentAccountId != '空座'){
+    if (opponentAccountId != '空座') {
       socketService.sendReady(opponentAccountId);
     }
-    
+
     final Map<String, dynamic> params = {
       'player': {
-        'accountId': playInfo['me']['accountId'],
-        'username': playInfo['me']['username'],
-        'avatar': playInfo['me']['avatar'],
-        'level': playInfo['me']['level'],
+        'accountId': playerInfo['me']['accountId'],
+        'username': playerInfo['me']['username'],
+        'avatar': playerInfo['me']['avatar'],
+        'level': playerInfo['me']['level'],
         'isRed': false,
         'timeLeft': gameTime.value,
       },
@@ -1232,33 +1276,33 @@ class ChineseChessBoardController extends GetxController {
 
   // 匹配成功
   void matchSuccess(Map<String, dynamic> data) {
-    print('myTurn:${playInfo['me']['myTurn'].value}');
+    print('myTurn:${playerInfo['me']['myTurn'].value}');
     Map<String, dynamic> player1 = data['player1'];
     Map<String, dynamic> player2 = data['player2'];
     roomId = data['roomId'];
     if (player1['accountId'] != GlobalData.userInfo['accountId']) {
-      playInfo['opponent']['accountId'].value = player1['accountId'];
-      playInfo['opponent']['username'].value = player1['username'];
-      playInfo['opponent']['avatar'].value = player1['avatar'];
-      playInfo['opponent']['level'].value = player1['level'];
-      playInfo['opponent']['isRed'].value = player1['isRed'];
-      playInfo['opponent']['myTurn'].value = player1['isRed'];
-      playInfo['me']['isRed'].value = player2['isRed'];
-      playInfo['me']['myTurn'].value = player2['isRed'];
+      playerInfo['opponent']['accountId'].value = player1['accountId'];
+      playerInfo['opponent']['username'].value = player1['username'];
+      playerInfo['opponent']['avatar'].value = player1['avatar'];
+      playerInfo['opponent']['level'].value = player1['level'];
+      playerInfo['opponent']['isRed'].value = player1['isRed'];
+      playerInfo['opponent']['myTurn'].value = player1['isRed'];
+      playerInfo['me']['isRed'].value = player2['isRed'];
+      playerInfo['me']['myTurn'].value = player2['isRed'];
     } else {
-      playInfo['opponent']['accountId'].value = player2['accountId'];
-      playInfo['opponent']['username'].value = player2['username'];
-      playInfo['opponent']['avatar'].value = player2['avatar'];
-      playInfo['opponent']['level'].value = player2['level'];
-      playInfo['opponent']['isRed'].value = player2['isRed'];
-      playInfo['opponent']['myTurn'].value = player2['isRed'];
-      playInfo['me']['isRed'].value = player1['isRed'];
-      playInfo['me']['myTurn'].value = player1['isRed'];
+      playerInfo['opponent']['accountId'].value = player2['accountId'];
+      playerInfo['opponent']['username'].value = player2['username'];
+      playerInfo['opponent']['avatar'].value = player2['avatar'];
+      playerInfo['opponent']['level'].value = player2['level'];
+      playerInfo['opponent']['isRed'].value = player2['isRed'];
+      playerInfo['opponent']['myTurn'].value = player2['isRed'];
+      playerInfo['me']['isRed'].value = player1['isRed'];
+      playerInfo['me']['myTurn'].value = player1['isRed'];
     }
-    playInfo['me']['myTurn'].refresh();
-    playInfo['opponent']['myTurn'].refresh();
+    playerInfo['me']['myTurn'].refresh();
+    playerInfo['opponent']['myTurn'].refresh();
     print(
-      'myTurn:${playInfo['me']['myTurn'].value},opponent:${playInfo['opponent']['myTurn'].value}',
+      'myTurn:${playerInfo['me']['myTurn'].value},opponent:${playerInfo['opponent']['myTurn'].value}',
     );
   }
 
@@ -1267,11 +1311,11 @@ class ChineseChessBoardController extends GetxController {
     final Map<String, dynamic> params = {
       'roomId': roomId,
       'step': {
-        'accountId': playInfo['me']['accountId'],
+        'accountId': playerInfo['me']['accountId'],
         'type': type,
         'from': {'row': from.row, 'col': from.col},
         'to': {'row': to.row, 'col': to.col},
-        'timeLeft': playInfo['me']['timeLeft'].value,
+        'timeLeft': playerInfo['me']['timeLeft'].value,
       },
     };
     moves.add(params['step']);
@@ -1280,86 +1324,89 @@ class ChineseChessBoardController extends GetxController {
 
   // 获取对方落子
   void getOpponentMove(Map<String, dynamic> moveData) async {
-    final List<String> types = [
-      '帥',
-      '將',
-      '仕',
-      '相',
-      '象',
-      '馬',
-      '車',
-      '炮',
-      '兵',
-      '卒',
-    ];
     print('moveData,$moveData');
     final data = moveData['step'];
     print('data,$data');
     // 如果不是对方的操作，则忽略
-    if (data['accountId'] != playInfo['opponent']['accountId'].value) {
-      print('${data['accountId']}不是${playInfo['opponent']['accountId'].value}');
+    if (data['accountId'] != playerInfo['opponent']['accountId'].value) {
+      print(
+        '${data['accountId']}不是${playerInfo['opponent']['accountId'].value}',
+      );
       return;
     }
-    playInfo['opponent']['timeLeft'].value = (data['timeLeft'] != null)
+    playerInfo['opponent']['timeLeft'].value = (data['timeLeft'] != null)
         ? data['timeLeft'].round()
-        : playInfo['opponent']['timeLeft'].value;
+        : playerInfo['opponent']['timeLeft'].value;
+
     moves.add(data);
     print('moves:${moves.length}');
-    if (data['type'] == '请求悔棋') {
+
+    num row = 9 - data['from']['row'].toInt();
+    num col = 8 - data['from']['col'].toInt();
+    Point from = Point(row: row.toInt(), col: col.toInt());
+    moves[moves.length - 1]['from']['row'] = row.toInt();
+    moves[moves.length - 1]['from']['col'] = col.toInt();
+    row = 9 - data['to']['row'].toInt();
+    col = 8 - data['to']['col'].toInt();
+    Point to = Point(row: row.toInt(), col: col.toInt());
+    moves[moves.length - 1]['to']['row'] = row.toInt();
+    moves[moves.length - 1]['to']['col'] = col.toInt();
+    print('movePiece,${moves[moves.length - 1]}');
+    turnTransition(); // 切换回合
+    moveOpponentPiece(from, to);
+  }
+
+  // 接受对方信息
+  void receiveText(Map<String, dynamic> message) {
+    if (message['accountId'] != playerInfo['opponent']['accountId'].value) {
+      print(
+        '${message['accountId']}不是${playerInfo['opponent']['accountId'].value}',
+      );
+      return;
+    }
+    chatHistory.add({
+      'accountId': playerInfo['opponent']['accountId'],
+      'text': message['text'],
+    });
+    if (message['text'] != '') {
+      opponentChatMessage.value = message['text'];
+      playerInfo['opponent']['showMessage'].value = true;
+      Future.delayed(const Duration(milliseconds: 5000), () {
+        playerInfo['opponent']['showMessage'].value = false;
+      });
+    }
+  }
+
+  //处理对方动作
+  void receiveActions(Map<String, dynamic> action) {
+    if (action['accountId'] != playerInfo['opponent']['accountId'].value) {
+      print(
+        '${action['accountId']}不是${playerInfo['opponent']['accountId'].value}',
+      );
+      return;
+    }
+    if (action['type'] == '请求悔棋') {
       dealOpponentUndo();
-    } else if (data['type'] == '请求和棋') {
+    } else if (action['type'] == '请求和棋') {
       dealOpponentDraw();
-    } else if (data['type'] == '认输') {
-      dealOpponentSurrender();
-    } else if ((data['type'] == '拒绝悔棋' || data['type'] == '拒绝和棋')) {
+    } else if (action['type'] == '同意和棋') {
       Get.back();
-      print('Get.back()');
+      overGame('和', 'draw');
+    } else if (action['type'] == '同意悔棋') {
+      Get.back();
+      undo();
+    } else if (action['type'] == '拒绝悔棋' || action['type'] == '拒绝和棋') {
+      Get.back();
       Get.dialog(
-        ShowMessageDialog(content: '对方${data['type']}请求'),
+        ShowMessageDialog(content: '对方${action['type']}请求'),
         barrierColor: Colors.transparent,
         barrierDismissible: false,
       );
       Future.delayed(const Duration(milliseconds: 1500), () {
         Get.back();
-        print('Get.back()');
       });
-    } else if (data['type'] == '同意和棋') {
-      Get.back();
-      print('Get.back()');
-      overGame('和', 'draw');
-    } else if (data['type'] == '同意悔棋') {
-      Get.back();
-      print('Get.back()');
-      undo();
-    } else if (types.contains(data['type'])) {
-      num row = 9 - data['from']['row'].toInt();
-      num col = 8 - data['from']['col'].toInt();
-      Point from = Point(row: row.toInt(), col: col.toInt());
-      moves[moves.length - 1]['from']['row'] = row.toInt();
-      moves[moves.length - 1]['from']['col'] = col.toInt();
-      row = 9 - data['to']['row'].toInt();
-      col = 8 - data['to']['col'].toInt();
-      Point to = Point(row: row.toInt(), col: col.toInt());
-      moves[moves.length - 1]['to']['row'] = row.toInt();
-      moves[moves.length - 1]['to']['col'] = col.toInt();
-      print('movePiece,${moves[moves.length - 1]}');
-      turnTransition(); // 切换回合
-      moveOpponentPiece(from, to);
-    } else {
-      //接受text
-      receiveText(data['type']);
-    }
-  }
-
-  // 接受对方信息
-  void receiveText(String text) {
-    print('receiveText:$text');
-    if (text != '') {
-      opponentChatMessage.value = text;
-      playInfo['opponent']['showMessage'].value = true;
-      Future.delayed(const Duration(milliseconds: 5000), () {
-        playInfo['opponent']['showMessage'].value = false;
-      });
+    } else if (action['type'] == '认输') {
+      dealOpponentSurrender();
     }
   }
 
@@ -1400,45 +1447,30 @@ class ChineseChessBoardController extends GetxController {
   // 悔棋操作
   void undo() {
     print('悔棋操作');
-    List<String> piece = [
-      '車',
-      '馬',
-      '相',
-      '象',
-      '仕',
-      '帥',
-      '將',
-      '将',
-      '炮',
-      '兵',
-      '卒',
-    ];
     for (var move in moves.reversed) {
-      if (piece.contains(move['type'])) {
-        Point from = Point(row: move['to']['row'], col: move['to']['col']);
-        Point to = Point(row: move['from']['row'], col: move['from']['col']);
-        placedPiece.value.pos.row = to.row;
-        placedPiece.value.pos.col = to.col;
-        chessBoard[to.row][to.col] = copyPiece(placedPiece.value);
-        if (capturedPiece.type != '') {
-          pieces.add(copyPiece(capturedPiece));
-          chessBoard[from.row][from.col] = copyPiece(capturedPiece);
-        } else {
-          chessBoard[from.row][from.col] = null;
-        }
-        selectedPiece.value = ChineseChessPieceModel(
-          type: '',
-          isRed: false,
-          pos: Point(row: -1, col: -1),
-        );
-        placedPiece.value = ChineseChessPieceModel(
-          type: '',
-          isRed: false,
-          pos: Point(row: -1, col: -1),
-        );
-        sourcePoint.value = Point(row: -1, col: -1);
-        break;
+      Point from = Point(row: move['to']['row'], col: move['to']['col']);
+      Point to = Point(row: move['from']['row'], col: move['from']['col']);
+      placedPiece.value.pos.row = to.row;
+      placedPiece.value.pos.col = to.col;
+      chessBoard[to.row][to.col] = copyPiece(placedPiece.value);
+      if (capturedPiece.type != '') {
+        pieces.add(copyPiece(capturedPiece));
+        chessBoard[from.row][from.col] = copyPiece(capturedPiece);
+      } else {
+        chessBoard[from.row][from.col] = null;
       }
+      selectedPiece.value = ChineseChessPieceModel(
+        type: '',
+        isRed: false,
+        pos: Point(row: -1, col: -1),
+      );
+      placedPiece.value = ChineseChessPieceModel(
+        type: '',
+        isRed: false,
+        pos: Point(row: -1, col: -1),
+      );
+      sourcePoint.value = Point(row: -1, col: -1);
+      break;
     }
     turnTransition();
     moves.clear();
@@ -1446,10 +1478,13 @@ class ChineseChessBoardController extends GetxController {
 
   // 请求悔棋
   void requestUndo() async {
-    if (playInfo['opponent']['myTurn'].value == true) {
+    if (stage.value != GameStage.playing) {
+      return;
+    }
+    if (playerInfo['opponent']['myTurn'].value == true) {
       bool hasUndo = false;
       for (var move in moves) {
-        if (move['accountId'] == playInfo['me']['accountId'] &&
+        if (move['accountId'] == playerInfo['me']['accountId'] &&
             move['from']['row'] != -1 &&
             move['from']['col'] != -1) {
           hasUndo = true;
@@ -1466,7 +1501,11 @@ class ChineseChessBoardController extends GetxController {
           barrierDismissible: false,
         );
         requestUndoCnt++;
-        sendMyMove('请求悔棋', Point(row: -1, col: -1), Point(row: -1, col: -1));
+        socketService.sendActions({
+          'type': '请求悔棋',
+          'accountId': GlobalData.userInfo['accountId'],
+          'roomId': roomId,
+        });
       } else {
         Get.dialog(
           ShowMessageDialog(content: '每个回合只能请求一次'),
@@ -1493,6 +1532,9 @@ class ChineseChessBoardController extends GetxController {
 
   // 请求和棋
   void requestDraw() async {
+    if (stage.value != GameStage.playing) {
+      return;
+    }
     if (requestDrawCnt == 0) {
       Get.dialog(
         LoadingDialog(content: '请求对方和棋中'),
@@ -1500,7 +1542,10 @@ class ChineseChessBoardController extends GetxController {
         barrierDismissible: false,
       );
       requestDrawCnt++;
-      sendMyMove('请求和棋', Point(row: -1, col: -1), Point(row: -1, col: -1));
+      socketService.sendActions({
+        'type': '请求和棋',
+        'accountId': GlobalData.userInfo['accountId'],
+      });
     } else {
       Get.dialog(
         ShowMessageDialog(content: '每个回合只能请求一次'),
@@ -1516,6 +1561,9 @@ class ChineseChessBoardController extends GetxController {
 
   // 认输
   void surrender() {
+    if (stage.value != GameStage.playing) {
+      return;
+    }
     Get.dialog(
       ConfirmDialog(
         content: '确定认输吗',
@@ -1524,7 +1572,11 @@ class ChineseChessBoardController extends GetxController {
         onConfirm: () {
           Get.back();
           print('Get.back()');
-          sendMyMove('认输', Point(row: -1, col: -1), Point(row: -1, col: -1));
+          socketService.sendActions({
+            'type': '认输',
+            'accountId': GlobalData.userInfo['accountId'],
+            'roomId': roomId,
+          });
           overGame('败', 'surrender');
         },
         onCancel: () {
@@ -1563,13 +1615,21 @@ class ChineseChessBoardController extends GetxController {
 
   // 接受对方悔棋
   void acceptOpponentUndo() async {
-    sendMyMove('同意悔棋', Point(row: -1, col: -1), Point(row: -1, col: -1));
+    socketService.sendActions({
+      'accountId': playerInfo['me']['accountId'],
+      'type': '同意悔棋',
+      'roomId': roomId,
+    });
     undo();
   }
 
   // 拒绝对方悔棋
   void rejectOpponentUndo() {
-    sendMyMove('拒绝悔棋', Point(row: -1, col: -1), Point(row: -1, col: -1));
+    socketService.sendActions({
+      'accountId': playerInfo['me']['accountId'],
+      'type': '拒绝悔棋',
+      'roomId': roomId,
+    });
   }
 
   // 处理对方和棋请求
@@ -1597,13 +1657,21 @@ class ChineseChessBoardController extends GetxController {
 
   // 接受对方和棋请求
   void acceptOpponentDraw() async {
-    sendMyMove('同意和棋', Point(row: -1, col: -1), Point(row: -1, col: -1));
+    socketService.sendActions({
+      'accountId': playerInfo['me']['accountId'],
+      'type': '同意和棋',
+      'roomId': roomId,
+    });
     overGame('和', 'draw');
   }
 
   // 拒绝对方和棋请求
   void rejectOpponentDraw() {
-    sendMyMove('拒绝和棋', Point(row: -1, col: -1), Point(row: -1, col: -1));
+    socketService.sendActions({
+      'accountId': playerInfo['me']['accountId'],
+      'type': '拒绝和棋',
+      'roomId': roomId,
+    });
   }
 
   // 处理对方认输
@@ -1623,15 +1691,16 @@ class ChineseChessBoardController extends GetxController {
   // 游戏结束
   void overGame(String res, String reason) async {
     print('res,$res,reason,$reason');
+    GlobalData.isPlaying = false;
     Dio dio = Dio();
     final Map<String, dynamic> params = {
       'roomId': roomId,
       'type': type,
       'result': {
         'winner': res == '胜'
-            ? playInfo['me']['accountId']
+            ? playerInfo['me']['accountId']
             : res == '败'
-            ? playInfo['opponent']['accountId'].value
+            ? playerInfo['opponent']['accountId'].value
             : '和',
         'reason': reason,
       },
@@ -1685,9 +1754,9 @@ class ChineseChessBoardController extends GetxController {
   // 回合转换
   void turnTransition() {
     stopTimer();
-    playInfo['me']['myTurn'].value = !playInfo['me']['myTurn'].value;
-    playInfo['opponent']['myTurn'].value =
-        !playInfo['opponent']['myTurn'].value;
+    playerInfo['me']['myTurn'].value = !playerInfo['me']['myTurn'].value;
+    playerInfo['opponent']['myTurn'].value =
+        !playerInfo['opponent']['myTurn'].value;
 
     myStepTime.value = stepTime.value;
     opponentStepTime.value = stepTime.value;

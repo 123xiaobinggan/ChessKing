@@ -34,26 +34,6 @@ module.exports = (io, socket, db, roomCollection) => {
 
       if (room.type.includes("Ai")) {
         if (room.type == "ChineseChessAi") {
-          //如果不是落子
-          if (!pieces.includes(move['step']['type'])) {
-            if (move['step']['type'] == '请求和棋') {
-              cancelAI();
-              io.to(room.player1.id).emit("move", { step: { accountId: room.player2.accountId, type: "同意和棋", from: { row: -1, col: -1 }, to: { row: -1, col: -1 } } })
-            }
-            else if (move['step']['type'] == "请求悔棋") {
-              cancelAI();
-              io.to(room.player1.id).emit("move", { step: { accountId: room.player2.accountId, type: "同意悔棋", from: { row: -1, col: -1 }, "to": { row: -1, col: -1 } } })
-              undo(room, move.accountId);
-              await roomCollection.updateOne(
-                { _id: new ObjectId(move['roomId']) },
-                {
-                  $set: { board: room.board }
-                },
-              );
-            }
-            return;
-          }
-
           const fen = boardToFEN(room.board, room.player2.isRed);
           console.log('fen', fen);
           const aiMove = uciToMove(await pikafish(fen, room.player2.level == '初级' ? 3 : (room.player2.level == "中等" ? 8 : 12)), room.board);
@@ -137,27 +117,4 @@ function update(room, move) {
   }
 }
 
-function undo(room, accountId) {
-  for (var i = room.moves.length - 1; i >= 0; i--) {
-    var moved = room.moves[i];
-    if (pieces.includes(moved.type) && accountId == moved.accountId) {
-      var from_row = moved.to.row;
-      var from_col = moved.to.col;
-      var to_row = moved.from.row;
-      var to_col = moved.from.col;
-      for (var j = 0; j < room.board.length; j++) {
-        var piece = room.board[j];
-        if (piece.type == moved.type && piece.pos.row == from_row && piece.pos.col == from_col) {
-          piece.pos.row = to_row;
-          piece.pos.col = to_col;
-          if (moved.capture) {
-            room.board.push(moved.capture)
-          }
-          break;
-        }
-      }
-      break;
-    }
-  }
 
-}

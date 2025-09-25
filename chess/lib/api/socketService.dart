@@ -4,6 +4,7 @@ import 'dart:async';
 import '../global/global_data.dart'; // 存储全局数据
 import '../widgets/invite_dialog.dart'; // 显示邀请弹窗
 import 'package:get/get.dart';
+import '../widgets/show_message_dialog.dart';
 
 class SocketService {
   static final SocketService _instance = SocketService._internal();
@@ -43,17 +44,29 @@ class SocketService {
   Stream<dynamic> get onOpponentReconnect =>
       _opponentReconnectController?.stream ?? const Stream.empty();
 
+  StreamController<dynamic>? _opponentReadyController;
+  Stream<dynamic> get onOpponentReady =>
+      _opponentReadyController?.stream ?? const Stream.empty();
+
   StreamController<dynamic>? _opponentDealInvitationController;
   Stream<dynamic> get onOpponentDealInvitation =>
       _opponentDealInvitationController?.stream ?? const Stream.empty();
 
-  StreamController<dynamic>? _opponentSendInformationController;
-  Stream<dynamic> get onOpponentSendInformation =>
-      _opponentSendInformationController?.stream?? const Stream.empty();
+  StreamController<dynamic>? _roomJoinedController;
+  Stream<dynamic> get onRoomJoined =>
+      _roomJoinedController?.stream ?? const Stream.empty();
 
-  StreamController<dynamic>? _opponentReadyController;
-  Stream<dynamic> get onOpponentReady =>
-      _opponentReadyController?.stream?? const Stream.empty();
+  StreamController<dynamic>? _receiveMessagesController;
+  Stream<dynamic> get onReceiveMessages =>
+      _receiveMessagesController?.stream ?? const Stream.empty();
+
+  StreamController<dynamic>? _receiveActionsController;
+  Stream<dynamic> get onReceiveActions =>
+      _receiveActionsController?.stream ?? const Stream.empty();
+
+  StreamController<dynamic>? _opponentLeaveController;
+  Stream<dynamic> get onOpponentLeave =>
+      _opponentLeaveController?.stream ?? const Stream.empty();
 
   // ---- 初始化连接 ----
   void initSocket() {
@@ -88,11 +101,20 @@ class SocketService {
     _opponentDealInvitationController?.close();
     _opponentDealInvitationController = StreamController<dynamic>.broadcast();
 
-    _opponentSendInformationController?.close();
-    _opponentSendInformationController = StreamController<dynamic>.broadcast();
-
     _opponentReadyController?.close();
     _opponentReadyController = StreamController<dynamic>.broadcast();
+
+    _roomJoinedController?.close();
+    _roomJoinedController = StreamController<dynamic>.broadcast();
+
+    _receiveMessagesController?.close();
+    _receiveMessagesController = StreamController<dynamic>.broadcast();
+
+    _receiveActionsController?.close();
+    _receiveActionsController = StreamController<dynamic>.broadcast();
+
+    _opponentLeaveController?.close();
+    _opponentLeaveController = StreamController<dynamic>.broadcast();
 
     _socket = IO.io(
       'http://120.48.156.237:3000',
@@ -149,6 +171,7 @@ class SocketService {
       }
     });
 
+    // 匹配成功
     _socket?.on('match_success', (data) {
       print("🎯 匹配成功: $data");
       if (_matchSuccessController?.isClosed == false) {
@@ -158,17 +181,28 @@ class SocketService {
       }
     });
 
-    _socket?.on('opponentReady', (_){
+    // 对方准备
+    _socket?.on('opponentReady', (accountId) {
       print('对方已准备');
       if (_opponentReadyController?.isClosed == false) {
-        _opponentReadyController?.add(true); // 发送空数据
+        _opponentReadyController?.add(accountId); // 发送空数据
       }
     });
 
+    // 对方离开
+    _socket?.on('opponentLeave', (_) {
+      print('对方已离开');
+      if (_opponentLeaveController?.isClosed == false) {
+        _opponentLeaveController?.add(true); // 发送空数据
+      }
+    });
+
+    // 匹配失败
     _socket?.on('match_error', (data) {
       print("❌ 匹配失败: $data");
     });
 
+    // 等待中
     _socket?.on('waiting', (data) {
       print("⌛ 等待中: $data");
       if (_waitingController?.isClosed == false) {
@@ -176,6 +210,7 @@ class SocketService {
       }
     });
 
+    // 接收落子
     _socket?.on('move', (data) {
       print("♟ 对手落子: $data");
       if (data is Map && _moveController?.isClosed == false) {
@@ -183,6 +218,23 @@ class SocketService {
       }
     });
 
+    // 接收消息
+    _socket?.on('receiveMessages', (data) {
+      print("📩 收到消息: $data");
+      if (_receiveMessagesController?.isClosed == false) {
+        _receiveMessagesController?.add(data);
+      }
+    });
+
+    // 接收动作
+    _socket?.on('receiveActions', (data) {
+      print("🕹 对手请求: $data");
+      if (_receiveActionsController?.isClosed == false) {
+        _receiveActionsController?.add(data);
+      }
+    });
+
+    // 对手断线
     _socket?.on('opponentDisconnect', (_) {
       print("❤️ 对手断线");
       if (_opponentDisconnectController?.isClosed == false) {
@@ -191,6 +243,7 @@ class SocketService {
       }
     });
 
+    // 对方重新连接
     _socket?.on('opponentReconnect', (_) {
       print('❤️ 对方重新连接');
       if (_opponentReconnectController?.isClosed == false) {
@@ -198,6 +251,7 @@ class SocketService {
       }
     });
 
+    // 接收邀请
     _socket?.on('receiveInvitation', (data) {
       print('receiveInvitation,$data');
       print(
@@ -241,6 +295,7 @@ class SocketService {
       }
     });
 
+    // 对方处理邀请
     _socket?.on('opponentDealInvitation', (data) {
       print('opponentDealInvitation,$data');
       if (_opponentDealInvitationController?.isClosed == false) {
@@ -248,12 +303,27 @@ class SocketService {
       }
     });
 
-    _socket?.on('opponentSendInformation', (_) {
-      print('opponentSendInformation');
-      if (_opponentSendInformationController?.isClosed == false) {
-        _opponentSendInformationController?.add(true);
+    // 房间已加入
+    _socket?.on('room_joined', (data) {
+      print('room_joined,房间建立,$data');
+      if (_roomJoinedController?.isClosed == false) {
+        _roomJoinedController?.add(data);
       }
     });
+
+    // 房间不存在
+    _socket?.on('roomNotExist', (_) {
+      print('房间不存在');
+      Get.dialog(
+        ShowMessageDialog(content: '房间不存在'),
+        barrierDismissible: false,
+        barrierColor: Colors.transparent,
+      );
+      Future.delayed(const Duration(milliseconds: 1500), () {
+        Get.back();
+      });
+    });
+
     // 开始连接
     _socket!.connect();
   }
@@ -285,6 +355,22 @@ class SocketService {
       _socket?.emit('move', move);
     } else {
       print("⚠️ 未连接，无法发送落子");
+    }
+  }
+
+  // --- 发送actions ---
+  void sendActions(Map<String, dynamic> actions) {
+    if (_socket?.connected == true) {
+      print("📤 发送请求: $actions");
+      _socket?.emit('sendActions', actions);
+    }
+  }
+
+  // ---- 发送消息 ----
+  void sendMessages(Map<String, dynamic> messages) {
+    if (_socket?.connected == true) {
+      print("📤 发送消息: $messages");
+      _socket?.emit('sendMessages', messages);
     }
   }
 
@@ -338,9 +424,10 @@ class SocketService {
     });
   }
 
-  // ---- 离开房间 ----
-  void overGame(){
+  // ---- 游戏结束 ----
+  void overGame() {
     _roomId = '';
+    GlobalData.isPlaying = false;
   }
 
   // ---- 销毁 ----

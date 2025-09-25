@@ -12,7 +12,6 @@ const io = new Server(server, {
   pingTimeout: 3000
 });
 
-
 const port = 3000;
 
 app.use(express.json());
@@ -37,8 +36,9 @@ const registerDisconnectHandler = require('./socketHandlers/disconnect');
 const registerSendInvitationHandler = require('./socketHandlers/sendInvitation');
 const registerDealInvitationHandler = require('./socketHandlers/dealInvitation');
 const registerCancelMatchHandler = require('./socketHandlers/cancelMatch');
-const registerSendOpponentInformationHandler = require('./socketHandlers/sendOpponentInformation');
-const registerOpponentReadyHandler = require('./socketHandlers/opponentReady');
+const registerSendMessagesHandler = require('./socketHandlers/sendMessages');
+const registerSendActionsHandler = require('./socketHandlers/sendActions');
+
 
 let accountIdMap = {}
 let waitingPlayers = [];
@@ -50,9 +50,9 @@ const connectDB = require('./db');
 
   io.on('connection', (socket) => {
     const { accountId } = socket.handshake.auth;
-    accountIdMap[accountId] = socket.id
+    accountIdMap[accountId] = socket
     socket.accountId = accountId
-    console.log('新请求连接', accountId, socket.id, accountIdMap);
+    console.log('新请求连接', accountId, socket.id, Object.values(accountIdMap).map(socket => socket.id));
 
     //ChineseChessMatch
     registerChineseChessMatchHandler(io, socket, db, waitingPlayers, roomCollection);
@@ -67,15 +67,15 @@ const connectDB = require('./db');
     //断线
     registerDisconnectHandler(io, socket, db, waitingPlayers, accountIdMap, roomCollection);
     //取消匹配
-    registerCancelMatchHandler(io, socket, waitingPlayers);
+    registerCancelMatchHandler(io, socket, roomCollection,waitingPlayers);
     //发送邀请
-    registerSendInvitationHandler(io, socket, userCollection, accountIdMap);
+    registerSendInvitationHandler(io, socket, userCollection, roomCollection, accountIdMap);
     //接收邀请
-    registerDealInvitationHandler(io, socket, accountIdMap);
-    //接收邀请后我送我方信息
-    registerSendOpponentInformationHandler(io, socket, accountIdMap);
-    // 通知对方我方已准备
-    registerOpponentReadyHandler(io, socket, accountIdMap);
+    registerDealInvitationHandler(io, socket, userCollection, roomCollection, accountIdMap);
+    // 发送消息
+    registerSendMessagesHandler(io,socket,roomCollection,accountIdMap);
+    // 发送actions
+    registerSendActionsHandler(io,socket,roomCollection,accountIdMap);
   });
 
 })()
