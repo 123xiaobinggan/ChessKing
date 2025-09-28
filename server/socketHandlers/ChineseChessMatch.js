@@ -22,7 +22,7 @@ module.exports = (io, socket, db, waitingPlayers, roomCollection) => {
         player1,
         player2,
         type: 'ChineseChessMatch',
-        timeMode: player['timeMode'],
+        timeMode: player['timeLeft'],
         status: 'playing',
         moves: [],
         result: { winner: null, reason: null },

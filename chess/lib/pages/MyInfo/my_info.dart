@@ -308,6 +308,45 @@ class MyInfo extends StatelessWidget {
                             },
                           ),
                           Divider(thickness: 2),
+                          //会话列表
+                          ListTile(
+                            leading: Image.asset(
+                              'assets/MyInfo/Message.png',
+                              width: 24,
+                              height: 24,
+                            ),
+                            title: Text(
+                              '会话列表',
+                              style: TextStyle(
+                                color: Colors.brown.shade800,
+                                fontSize: 17,
+                                fontWeight: FontWeight.w600,
+                                fontFamily: 'Roboto',
+                                shadows: [
+                                  Shadow(
+                                    color: Colors.black26,
+                                    offset: Offset(0.5, 0.5),
+                                    blurRadius: 1,
+                                  ),
+                                ],
+                              ),
+                            ),
+                            trailing: Icon(
+                              Icons.chevron_right,
+                              size: 26,
+                              color: Colors.brown.shade400,
+                            ),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            tileColor: Colors.brown.withValues(
+                              alpha: (0.3 * 255),
+                            ), // 半透明背景突出每个item
+                            onTap: () {
+                              Get.toNamed('/Messages');
+                            },
+                          ),
+                          Divider(thickness: 2),
                           // 等级
                           ListTile(
                             leading: Image.asset(

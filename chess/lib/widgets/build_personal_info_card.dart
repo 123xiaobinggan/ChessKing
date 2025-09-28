@@ -12,9 +12,11 @@ class BuildPersonalInfoCard extends StatelessWidget {
   final int activity; // 经验
   final int gold;
   final int coupon;
+  final bool isFriend;
 
   final VoidCallback onLevelTap; // 点击等级信息按钮
   final VoidCallback onFriendTap; // 点击添加好友按钮
+  final VoidCallback onSendConversationMessage;
 
   const BuildPersonalInfoCard({
     super.key,
@@ -25,8 +27,10 @@ class BuildPersonalInfoCard extends StatelessWidget {
     required this.activity,
     required this.gold,
     required this.coupon,
+    required this.isFriend,
     required this.onLevelTap,
     required this.onFriendTap,
+    required this.onSendConversationMessage,
   });
 
   @override
@@ -142,6 +146,7 @@ class BuildPersonalInfoCard extends StatelessWidget {
               ),
               const SizedBox(height: 8),
 
+              if(!isFriend)
               // 添加好友按钮
               SizedBox(
                 width: double.infinity,
@@ -155,6 +160,24 @@ class BuildPersonalInfoCard extends StatelessWidget {
                     ),
                   ),
                   child: const Text("添加好友"),
+                ),
+              ),
+              const SizedBox(height: 8),
+
+              if(isFriend)
+              // 发送私信按钮
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton(
+                  onPressed: onSendConversationMessage,
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.white,
+                    side: const BorderSide(color: Colors.white),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: const Text("发送消息"),
                 ),
               ),
             ],

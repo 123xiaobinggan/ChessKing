@@ -19,6 +19,9 @@ import '../bindings/Chinese_chess_board.dart';
 import '../bindings/recharge.dart';
 import '../bindings/game_record.dart';
 import '../bindings/game_replay.dart';
+import '../bindings/messages.dart';
+import '../bindings/update.dart';
+import '../bindings/chat_window.dart';
 
 import '../../pages/Version/version.dart';
 import '../../pages/Enter/Login/login.dart';
@@ -34,6 +37,8 @@ import '../../pages/ChineseChessBoard/chinese_chess_board.dart';
 import '../../pages/Recharge/recharge.dart';
 import '../../pages/GameRecord/game_record.dart';
 import '../../pages/GameReplay/game_replay.dart';
+import '../../pages/Conversation/conversation.dart';
+import '../../pages/ChatWindow/chat_window.dart';
 
 class AppRoutes {
   static final Login = "/";
@@ -53,6 +58,8 @@ class AppRoutes {
   static final Recharge = "/Recharge";
   static final GameRecord = "/GameRecord";
   static final GameReplay = "/GameReplay";
+  static final Messages = "/Messages";
+  static final ChatWindow = "/ChatWindow";
 }
 
 class AppPages {
@@ -137,6 +144,16 @@ class AppPages {
       name: AppRoutes.GameReplay,
       page: () => GameReplay(),
       binding: GameReplayBindings(),
+    ),
+    GetPage(
+      name: AppRoutes.Messages,
+      page: () => Conversations(),
+      binding: ConversationsBindings(),
+    ),
+    GetPage(
+      name: AppRoutes.ChatWindow,
+      page: () => ChatWindow(),
+      binding: ChatWindowBindings(),
     ),
   ];
 }

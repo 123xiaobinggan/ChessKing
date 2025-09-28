@@ -62,7 +62,15 @@ class MyFriendsController extends GetxController {
         }
         GlobalData.userInfo['friends'].clear();
         GlobalData.userInfo['friends'].addAll(
-          friends.map((f) => f['accountId']).toList(),
+          friends
+              .map(
+                (f) => {
+                  'accountId': f['accountId'],
+                  'username': f['username'],
+                  'avatar': f['avatar'],
+                },
+              )
+              .toList(),
         );
         print('friends:$friends'); // 打印好友列表
         print('requestFriends:$requestFriends'); // 打印好友申请列表
@@ -712,8 +720,10 @@ class MyFriendsController extends GetxController {
         activity: activity,
         gold: gold,
         coupon: coupon,
+        isFriend: friends.any((friend) => friend['accountId'] == accountId),
         onLevelTap: () => onLevelTap(accountId),
         onFriendTap: () => onFriendTap(accountId),
+        onSendConversationMessage: () => onSendConversationMessage(accountId),
       ),
       barrierDismissible: true,
       barrierColor: Colors.black.withOpacity(0.001),
@@ -740,5 +750,10 @@ class MyFriendsController extends GetxController {
       final MyFriendsController myFriendsController = Get.find();
       myFriendsController.request(accountId: accountId);
     }
+  }
+
+  // 发送消息
+  void onSendConversationMessage(String accountId) {
+    Get.toNamed('/ChatWindow', parameters: {'accountId': accountId});
   }
 }

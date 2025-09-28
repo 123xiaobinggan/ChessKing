@@ -21,7 +21,7 @@ module.exports = (io, socket, userCollection, roomCollection, accountIdMap) => {
         const newRoom = {
             player1,
             type: data['type'],
-            timeMode: data['timeMode'],
+            timeMode: data['gameTime'],
             status: 'ready',
             moves: [],
             messages: [],

@@ -42,12 +42,6 @@ class GameRecordController extends GetxController {
     }
   }
 
-  @override
-  void onClose() {
-    scrollController.dispose(); // 确保控制器被释放
-    super.onClose();
-  }
-
   Future<void> fetchGameRecords(String type) async {
     if (isLoadingMore.value || !hasMore.value) return;
     isLoadingMore.value = true;
@@ -101,7 +95,6 @@ class GameRecordController extends GetxController {
               '分钟';
 
           int undo = 0;
-          print('record[moves],${record['moves']}');
           // 3. 过滤 moves
           record['moves'] = (record['moves'] as List).where((move) {
             final type = move['type'] as String;
@@ -151,5 +144,11 @@ class GameRecordController extends GetxController {
       mode = '';
     }
     return species + " " + mode;
+  }
+
+  @override
+  void onClose() {
+    scrollController.dispose(); // 确保控制器被释放
+    super.onClose();
   }
 }

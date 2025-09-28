@@ -6,12 +6,14 @@ import 'start.dart';
 import 'api/pushManager.dart';
 import './api/socketService.dart'; // 引入 SocketService
 import './global/global_data.dart';
+import 'update_controller.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await GetStorage.init();
   GlobalData.socketService = SocketService(); // 实例化 SocketService
   await PushManager.init();
+  Get.put(UpdateController());
   runApp(MyApp());
 }
 
@@ -26,6 +28,7 @@ class _MyAppState extends State<MyApp> {
   @override
   void initState() {
     super.initState();
+    
   }
 
   @override

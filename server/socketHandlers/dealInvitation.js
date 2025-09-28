@@ -5,11 +5,7 @@ module.exports = (io, socket, userCollection, roomCollection, accountIdMap) => {
         const inviterAccountId = data['inviterAccountId'];
         const inviteeAccountId = data['inviteeAccountId'];
         if (data['deal'] == "accept") {
-            const inviterSocket = accountIdMap[inviterAccountId];
             const inviteeSocket = accountIdMap[inviteeAccountId];
-            const inviterUser = await userCollection.findOne({
-                accountId: inviterAccountId
-            });
             const inviteeUser = await userCollection.findOne({
                 accountId: inviteeAccountId
             });
@@ -40,7 +36,8 @@ module.exports = (io, socket, userCollection, roomCollection, accountIdMap) => {
             io.to(data['roomId']).emit("room_joined", {
                 roomId:data['roomId'],
                 inviter: room.player1,
-                invitee: player2
+                invitee: player2,
+                gameTime: room.timeMode
             });
         } else {
             if (accountIdMap[inviterAccountId]) {

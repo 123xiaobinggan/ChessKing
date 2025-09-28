@@ -94,7 +94,7 @@ class ChineseChessBoardController extends GetxController {
   Timer? _moveRequestTimer;
   Timer? _matchTimer;
 
-  final socketService = GlobalData.socketService; // 实例化 SocketService
+  final socketService = GlobalData.socketService;
   bool _moveListenerInitialized = false;
   StreamSubscription<dynamic>? _moveSubscription;
   StreamSubscription<dynamic>? _matchSubscription;
@@ -609,8 +609,10 @@ class ChineseChessBoardController extends GetxController {
         activity: activity,
         gold: gold,
         coupon: coupon,
+        isFriend: true,
         onLevelTap: () => onLevelTap(accountId),
         onFriendTap: () => onFriendTap(accountId),
+        onSendConversationMessage: () => onSendConversationMessage(accountId),
       ),
       barrierDismissible: true,
       barrierColor: Colors.black.withOpacity(0.001),
@@ -637,6 +639,11 @@ class ChineseChessBoardController extends GetxController {
       final MyFriendsController myFriendsController = Get.find();
       myFriendsController.request(accountId: accountId);
     }
+  }
+
+  // 发送私信
+  void onSendConversationMessage(String accountId) async {
+    Get.toNamed('/ChatWindow', parameters: {'accountId': accountId});
   }
 
   // 发送消息
@@ -1325,6 +1332,9 @@ class ChineseChessBoardController extends GetxController {
 
   // 获取对方落子
   void getOpponentMove(Map<String, dynamic> moveData) async {
+    if(stage.value != GameStage.playing){
+      return;
+    }
     print('moveData,$moveData');
     final data = moveData['step'];
     print('data,$data');
@@ -1537,16 +1547,20 @@ class ChineseChessBoardController extends GetxController {
       return;
     }
     if (requestDrawCnt == 0) {
-      Get.dialog(
-        LoadingDialog(content: '请求对方和棋中'),
-        barrierColor: Colors.transparent,
-        barrierDismissible: false,
-      );
-      requestDrawCnt++;
-      socketService.sendActions({
-        'type': '请求和棋',
-        'accountId': GlobalData.userInfo['accountId'],
-      });
+      if (type.contains('Ai')) {
+        overGame('和', 'draw');
+      } else {
+        Get.dialog(
+          LoadingDialog(content: '请求对方和棋中'),
+          barrierColor: Colors.transparent,
+          barrierDismissible: false,
+        );
+        requestDrawCnt++;
+        socketService.sendActions({
+          'type': '请求和棋',
+          'accountId': GlobalData.userInfo['accountId'],
+        });
+      }
     } else {
       Get.dialog(
         ShowMessageDialog(content: '每个回合只能请求一次'),

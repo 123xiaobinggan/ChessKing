@@ -7,6 +7,7 @@ import 'package:dio/dio.dart'; // 导入 Dio 库
 import '/global/global_data.dart'; // 导入全局数据类
 import 'package:app_installer/app_installer.dart'; // 导入 AppInstaller 库
 import 'package:path_provider/path_provider.dart';
+import 'update_controller.dart'; // 导入更新控制器类
 
 class SplashPage extends StatefulWidget {
   const SplashPage({super.key});
@@ -99,7 +100,8 @@ class _SplashPageState extends State<SplashPage>
                 TextButton(
                   onPressed: () async {
                     Get.back();
-                    await AppUpdater.downloadAndInstallApk(url);
+                    final updateController = Get.find<UpdateController>();
+                    await updateController.downloadAndInstallApk(url);
                     completer.complete();
                   },
                   child: Text('去更新'),
@@ -124,7 +126,7 @@ class AppUpdater {
   /// 下载并安装 apk
   static Future<void> downloadAndInstallApk(String url) async {
     final dir = await getExternalStorageDirectory(); // 应用专属目录
-    
+
     if (!dir!.existsSync()) {
       dir.createSync(recursive: true);
     }

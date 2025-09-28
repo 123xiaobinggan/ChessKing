@@ -1,9 +1,11 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 import 'dart:async';
 import '../global/global_data.dart'; // 存储全局数据
 import '../widgets/invite_dialog.dart'; // 显示邀请弹窗
 import 'package:get/get.dart';
+import '../widgets/show_conversation_message_dialog.dart';
 import '../widgets/show_message_dialog.dart';
 
 class SocketService {
@@ -68,6 +70,10 @@ class SocketService {
   Stream<dynamic> get onOpponentLeave =>
       _opponentLeaveController?.stream ?? const Stream.empty();
 
+  StreamController<dynamic>? _receiveConversationMessageController;
+  Stream<dynamic> get onReceiveConversationMessage =>
+      _receiveConversationMessageController?.stream ?? const Stream.empty();
+
   // ---- 初始化连接 ----
   void initSocket() {
     if (_socket != null && _socket!.connected) {
@@ -115,6 +121,10 @@ class SocketService {
 
     _opponentLeaveController?.close();
     _opponentLeaveController = StreamController<dynamic>.broadcast();
+
+    _receiveConversationMessageController?.close();
+    _receiveConversationMessageController =
+        StreamController<dynamic>.broadcast();
 
     _socket = IO.io(
       'http://120.48.156.237:3000',
@@ -333,6 +343,17 @@ class SocketService {
       });
     });
 
+    // 接收对话消息
+    _socket?.on('receiveConversationMessage', (message) {
+      print('receiveConversationMessage,$message');
+      if (_receiveConversationMessageController?.isClosed == false) {
+        _receiveConversationMessageController?.add(message);
+      }
+      if (message['receiverAccountId'] == GlobalData.userInfo['accountId']) {
+        _handleIncomingMessage(message);
+      }
+    });
+
     // 开始连接
     _socket!.connect();
   }
@@ -413,13 +434,13 @@ class SocketService {
     }
   }
 
-  // ---- 发送我方信息 ----
-  void sendOpponentInformation(data) {
+  // ---- 发送对话消息 ----
+  void sendConversationMessage(dynamic messages) {
     if (_socket?.connected == true) {
-      print('sendOpponentInformation,$data');
-      _socket?.emit('sendOpponentInformation', data);
+      print("📤 发送对话消息: $messages");
+      _socket?.emit('sendConversationMessage', messages);
     } else {
-      print("⚠️ 未连接，无法响应");
+      print("⚠️ 未连接，无法发送对话消息");
     }
   }
 
@@ -479,5 +500,57 @@ String transform(String? type) {
     return '军棋';
   } else {
     return '五子棋';
+  }
+}
+
+void _handleIncomingMessage(Map<String, dynamic> message) async {
+  final content = message["content"];
+  final username, avatar;
+  if (Get.currentRoute.contains(
+    '/ChatWindow?accountId=${message["senderAccountId"]}',
+  )) {
+    return;
+  }
+  Dio dio = new Dio();
+  Map<String, dynamic> params = {"accountId": message['senderAccountId']};
+
+  try {
+    final user = await dio.post(GlobalData.url + '/GetUserInfo', data: params);
+    if (user.data['code'] == 0) {
+      username = user.data['username'];
+      avatar = user.data['avatar'];
+      ShowConversationMessage(
+        avatar: avatar,
+        username: username,
+        content: content,
+        onTap: () {
+          print('${Get.currentRoute}');
+          if (Get.currentRoute.contains(
+            '/ChatWindow?accountId=${message["senderAccountId"]}',
+          )) {
+            return;
+          }
+          Get.toNamed(
+            "/ChatWindow",
+            parameters: {
+              "accountId": message["senderAccountId"],
+              "username": username,
+              "avatar": avatar,
+            },
+          );
+        },
+      );
+    } else {
+      Get.dialog(
+        ShowMessageDialog(content: '用户不存在'),
+        barrierDismissible: false,
+        barrierColor: Colors.transparent,
+      );
+      Future.delayed(const Duration(milliseconds: 1500), () {
+        Get.back();
+      });
+    }
+  } catch (e) {
+    print(e);
   }
 }

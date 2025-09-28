@@ -1,22 +1,23 @@
 const express = require('express');
 const router = express.Router();
 const connectDB = require('../../db');
+const { ObjectId } = require('mongodb');
 
 async function main(req, context) {
     try {
-        const { accountId } = req.body;
-        const db = await connectDB();
+        const { accountId, conversationId } = req.body;
+        const db = await connectDB(); // ✅ await
+        const convCollection = db.collection("Conversation");
 
-        const userCollection = db.collection('UserInfo');
-        const user = await userCollection.findOne({ accountId })
-        console.log('GetUserInfo',user)
-        if (!user) {
-            return { code: 1, msg: "用户不存在" }
-        }
-        return { code: 0, ...user };
+        await convCollection.updateOne(
+            { _id: new ObjectId(conversationId) },
+            { $set: { [`unreadCnt.${accountId}`]: 0 } }
+        );
+
+        return { code: 0, msg: 'success' };
     } catch (e) {
         console.log('e', e);
-        return { code: 1, msg: e }
+        return { code: 1, msg: e.message }; 
     }
 }
 
