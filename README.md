@@ -42,6 +42,8 @@ Supports chess record, history replay.
 
 Has message notification, message push.
 
+Has conversation function, supports instant communication, and has message tips.
+
 Built-in AI engine pikafish, supports different search depths.
 
 Supports multiple game modes, including:
