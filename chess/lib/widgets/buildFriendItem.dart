@@ -45,13 +45,26 @@ Widget buildFriendItem(Map friend, dynamic controller) {
               ),
             ),
             const SizedBox(width: 12),
-            Text(
-              friend['accountId'] ?? '未知用户',
-              style: const TextStyle(
-                fontSize: 16,
-                color: Color(0xFF5C3A21),
-                fontWeight: FontWeight.w500,
-              ),
+            Column(
+              children: [
+                Text(
+                  friend['accountId'] ?? '未知用户',
+                  style: const TextStyle(
+                    fontSize: 16,
+                    color: Color(0xFF5C3A21),
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  friend['online']?'在线':'离线',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: friend['online']?Colors.green:Colors.red,
+                    fontWeight: FontWeight.w400,
+                  ),
+                )
+              ],
             ),
           ],
         ),

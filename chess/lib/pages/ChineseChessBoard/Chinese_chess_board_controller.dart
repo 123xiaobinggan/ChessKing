@@ -1559,6 +1559,7 @@ class ChineseChessBoardController extends GetxController {
         socketService.sendActions({
           'type': '请求和棋',
           'accountId': GlobalData.userInfo['accountId'],
+          'roomId': roomId,
         });
       }
     } else {
