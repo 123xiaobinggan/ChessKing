@@ -141,7 +141,7 @@ class AppUpdater {
     Get.dialog(
       Obx(
         () => AlertDialog(
-          title: Text('正在下载更新\n加速器更快', textAlign: TextAlign.center),
+          title: Text('正在下载更新\n加速器更快\n请不要离开页面', textAlign: TextAlign.center),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [

@@ -83,6 +83,7 @@ class ChineseChessBoardController extends GetxController {
   int requestUndoCnt = 0;
   int requestDrawCnt = 0;
   bool isOpenReconnectDialog = false;
+  bool isChatInputControllerDisposed = false;
   ChineseChessPieceModel capturedPiece = ChineseChessPieceModel(
     type: '',
     isRed: false,
@@ -330,7 +331,9 @@ class ChineseChessBoardController extends GetxController {
     _moveListenerInitialized = false;
 
     chatInputController.dispose();
+    isChatInputControllerDisposed = true;
     Get.delete<ChineseChessBoardController>();
+
     super.onClose();
   }
 
@@ -645,7 +648,9 @@ class ChineseChessBoardController extends GetxController {
 
     Future.delayed(Duration(seconds: 5), () {
       showMyMessage.value = false;
-      chatInputController.clear();
+      if (isChatInputControllerDisposed == false) {
+        chatInputController.clear();
+      }
     });
 
     socketService.sendMessages({
@@ -1309,7 +1314,8 @@ class ChineseChessBoardController extends GetxController {
 
   // 获取对方落子
   void getOpponentMove(Map<String, dynamic> moveData) async {
-    if (isInCheckMateNotifier.value ==true || stage.value != GameStage.playing) {
+    if (isInCheckMateNotifier.value == true ||
+        stage.value != GameStage.playing) {
       return;
     }
     print('moveData,$moveData');
@@ -1643,7 +1649,7 @@ class ChineseChessBoardController extends GetxController {
   }
 
   // 游戏结束
-  void overGame(String res, String reason) async { 
+  void overGame(String res, String reason) async {
     print('res,$res,reason,$reason');
     GlobalData.isPlaying = false;
     Dio dio = Dio();

@@ -153,6 +153,7 @@ class SocketService {
         reconnectRoom();
       }
       notifyFriendsOnline();
+      getFriendsOnline();
     });
 
     _socket?.onDisconnect((_) {
@@ -511,6 +512,19 @@ class SocketService {
       });
     } else {
       print("⚠️ 未连接，无法发送通知");
+    }
+  }
+
+  // ---- 获取好友在线情况 ----
+  void getFriendsOnline() {
+    if (_socket?.connected == true) {
+      print("📤 获取好友在线情况");
+      _socket?.emit('getFriendsOnline', {
+        'accountId': GlobalData.userInfo['accountId'],
+        'friends': GlobalData.userInfo['friends'],
+      });
+    } else {
+      print("⚠️ 未连接，无法获取好友在线情况");
     }
   }
 
