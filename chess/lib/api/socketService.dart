@@ -16,6 +16,7 @@ class SocketService {
   IO.Socket? _socket;
 
   String? _roomId = '';
+  String? _socketRoomId = '';
 
   // ---- 事件流 ----
   StreamController<Map<String, dynamic>>? _moveController;
@@ -50,10 +51,6 @@ class SocketService {
   Stream<dynamic> get onOpponentReady =>
       _opponentReadyController?.stream ?? const Stream.empty();
 
-  StreamController<dynamic>? _opponentDealInvitationController;
-  Stream<dynamic> get onOpponentDealInvitation =>
-      _opponentDealInvitationController?.stream ?? const Stream.empty();
-
   StreamController<dynamic>? _roomJoinedController;
   Stream<dynamic> get onRoomJoined =>
       _roomJoinedController?.stream ?? const Stream.empty();
@@ -73,6 +70,14 @@ class SocketService {
   StreamController<dynamic>? _receiveConversationMessageController;
   Stream<dynamic> get onReceiveConversationMessage =>
       _receiveConversationMessageController?.stream ?? const Stream.empty();
+
+  StreamController<dynamic>? _receiveFriendsOnlineController;
+  Stream<dynamic> get onReceiveFriendsOnline =>
+      _receiveFriendsOnlineController?.stream?? const Stream.empty();
+
+  StreamController<dynamic>? _receiveFriendsOfflineController;
+  Stream<dynamic> get onReceiveFriendsOffline =>
+      _receiveFriendsOfflineController?.stream?? const Stream.empty();
 
   // ---- 初始化连接 ----
   void initSocket() {
@@ -104,9 +109,6 @@ class SocketService {
     _opponentReconnectController?.close();
     _opponentReconnectController = StreamController<dynamic>.broadcast();
 
-    _opponentDealInvitationController?.close();
-    _opponentDealInvitationController = StreamController<dynamic>.broadcast();
-
     _opponentReadyController?.close();
     _opponentReadyController = StreamController<dynamic>.broadcast();
 
@@ -126,6 +128,12 @@ class SocketService {
     _receiveConversationMessageController =
         StreamController<dynamic>.broadcast();
 
+    _receiveFriendsOnlineController?.close();
+    _receiveFriendsOnlineController = StreamController<dynamic>.broadcast();
+
+    _receiveFriendsOfflineController?.close();
+    _receiveFriendsOfflineController = StreamController<dynamic>.broadcast();
+
     _socket = IO.io(
       'http://120.48.156.237:3000',
       IO.OptionBuilder()
@@ -141,9 +149,10 @@ class SocketService {
     _socket?.onConnect((_) {
       print("✅ Socket 已连接: ${_socket?.id}");
 
-      if (_roomId != '') {
+      if (_socketRoomId != '' && _roomId != '') {
         reconnectRoom();
       }
+      notifyFriendsOnline();
     });
 
     _socket?.onDisconnect((_) {
@@ -176,6 +185,9 @@ class SocketService {
     // --- 业务事件 ---
     _socket?.on('reconnect_success', (data) {
       print("🔄 重新连接房间成功: $data");
+      if (data['status'] == 'finished') {
+        _roomId = '';
+      }
       if (_reconnectController?.isClosed == false) {
         _reconnectController?.add(data);
       }
@@ -187,6 +199,7 @@ class SocketService {
       if (_matchSuccessController?.isClosed == false) {
         _matchSuccessController?.add(Map<String, dynamic>.from(data));
         _roomId = data['roomId']; // 更新房间 ID
+        _socketRoomId = data['socketRoomId'] ?? ''; // 更新 socket 房间 ID
         print('roomId,$_roomId');
       }
     });
@@ -200,7 +213,10 @@ class SocketService {
     });
 
     // 对方离开
-    _socket?.on('opponentLeave', (_) {
+    _socket?.on('opponentLeave', (params) {
+      if (GlobalData.userInfo['accountId'] == params['accountId']) {
+        return;
+      }
       print('对方已离开');
       if (_opponentLeaveController?.isClosed == false) {
         _opponentLeaveController?.add(true); // 发送空数据
@@ -245,7 +261,11 @@ class SocketService {
     });
 
     // 对手断线
-    _socket?.on('opponentDisconnect', (_) {
+    _socket?.on('opponentDisconnect', (data) {
+      String opponentAccountId = data['accountId'];
+      if (opponentAccountId == GlobalData.userInfo['accountId']) {
+        return;
+      }
       print("❤️ 对手断线");
       if (_opponentDisconnectController?.isClosed == false) {
         print('通知前端对手断线');
@@ -262,11 +282,8 @@ class SocketService {
     });
 
     // 接收邀请
-    _socket?.on('receiveInvitation', (data) {
+    _socket?.on('receiveInvitation', (data) async {
       print('receiveInvitation,$data');
-      print(
-        '${data['gameTime'].runtimeType},${data['stepTime'].runtimeType},${data['type'].runtimeType}',
-      );
       if (GlobalData.isPlaying == true) {
         data['deal'] = 'playing';
         dealInvitation(data);
@@ -279,10 +296,35 @@ class SocketService {
             type: transform(data['type']),
             gameTime: ((data['gameTime'] / 60).toInt() ?? 0).toString() + '分',
             stepTime: (data['stepTime'] ?? 0).toString() + '秒',
-            onAccept: () {
+            onAccept: () async {
               data['deal'] = 'accept';
-              dealInvitation(data);
               Get.back();
+              if (Get.currentRoute.contains('Board')) {
+                Get.back();
+                await Future.delayed(const Duration(milliseconds: 500));
+                Get.toNamed(
+                  routesTransform(data['type']),
+                  parameters: {
+                    'type': data['type'],
+                    'accountId': data['inviterAccountId'],
+                    'gameTime': data['gameTime'].toString(),
+                    'stepTime': data['stepTime'].toString(),
+                  },
+                );
+              } else {
+                Get.toNamed(
+                  routesTransform(data['type']),
+                  parameters: {
+                    'type': data['type'],
+                    'accountId': data['inviterAccountId'],
+                    'gameTime': data['gameTime'].toString(),
+                    'stepTime': data['stepTime'].toString(),
+                  },
+                );
+              }
+              Future.delayed(const Duration(milliseconds: 600), () {
+                dealInvitation(data);
+              });
             },
             onReject: () {
               data['deal'] = 'reject';
@@ -299,34 +341,31 @@ class SocketService {
     // 对方处理邀请
     _socket?.on('opponentDealInvitation', (data) {
       print('opponentDealInvitation,$data');
-      if (_opponentDealInvitationController?.isClosed == false) {
-        _opponentDealInvitationController?.add(data);
+      if (data['deal'] == 'reject') {
+        Get.dialog(
+          ShowMessageDialog(content: '对方拒绝了你的邀请'),
+          barrierDismissible: false,
+          barrierColor: Colors.transparent,
+        );
+      } else {
+        Get.dialog(
+          ShowMessageDialog(content: '对方在对局中'),
+          barrierDismissible: false,
+          barrierColor: Colors.transparent,
+        );
       }
+      Future.delayed(const Duration(milliseconds: 1500), () {
+        Get.back();
+      });
     });
 
     // 房间已加入
     _socket?.on('room_joined', (data) {
       print('room_joined,房间建立');
-      _roomId = data['roomId'];
-      Get.toNamed(
-        '/ChineseChessBoard',
-        parameters: {
-          'type': 'ChineseChessWithFriends',
-          'accountId': data['inviter']['accountId'],
-          'gameTime': data['gameTime'].toString(),
-          'stepTime':
-              (data['gameTime'] == 1200 || data['gameTime'] == 900
-                      ? 60
-                      : data['gameTime'] == 600
-                      ? 30
-                      : 15)
-                  .toString(),
-        },
-      );
+      _socketRoomId = data['socketRoomId'];
+
       if (_roomJoinedController?.isClosed == false) {
-        Future.delayed((const Duration(milliseconds: 50)), () {
-          _roomJoinedController?.add(data);
-        });
+        _roomJoinedController?.add(data);
       }
     });
 
@@ -351,6 +390,24 @@ class SocketService {
       }
       if (message['receiverAccountId'] == GlobalData.userInfo['accountId']) {
         _handleIncomingMessage(message);
+      }
+    });
+
+    // 接收好友上线状态
+    _socket?.on('receiveFriendsOnline', (data) {
+      print('👻 receiveFriendsOnline,$data');
+      GlobalData.friendsOnline[data['accountId']] = true;
+      if (_receiveFriendsOnlineController?.isClosed == false) {
+        _receiveFriendsOnlineController?.add(data);
+      }
+    });
+
+    // 接收好友下线状态
+    _socket?.on('receiveFriendsOffline', (data) {
+      print('receiveFriendsOffline,$data');
+      GlobalData.friendsOnline[data['accountId']] = false;
+      if (_receiveFriendsOfflineController?.isClosed == false) {
+        _receiveFriendsOfflineController?.add(data);
       }
     });
 
@@ -425,10 +482,10 @@ class SocketService {
   }
 
   // ---- 处理邀请 ----
-  void dealInvitation(Map<String, dynamic> params) {
+  void dealInvitation(Map<String, dynamic> data) {
     if (_socket?.connected == true) {
-      print("📤 发送接受邀请: $params");
-      _socket?.emit('dealInvitation', params);
+      print("📤 发送接受邀请: $data");
+      _socket?.emit('dealInvitation', data);
     } else {
       print("⚠️ 未连接，无法发送接受邀请");
     }
@@ -444,12 +501,26 @@ class SocketService {
     }
   }
 
+  // ---- 通知好友自己已经上线 ----
+  void notifyFriendsOnline() {
+    if (_socket?.connected == true) {
+      print("📤 通知好友自己已经上线");
+      _socket?.emit('notifyFriendsOnline', {
+        'accountId': GlobalData.userInfo['accountId'],
+        'friends': GlobalData.userInfo['friends'],
+      });
+    } else {
+      print("⚠️ 未连接，无法发送通知");
+    }
+  }
+
   // ---- 重新连接房间 ----
   void reconnectRoom() {
     print("🔄 reconnectRoom重新连接房间,${_roomId}");
     print('roomId,$_roomId');
     _socket?.emit('reconnectRoom', {
       'roomId': _roomId,
+      'socketRoomId': _socketRoomId,
       'accountId': GlobalData.userInfo['accountId'],
     });
   }
@@ -500,6 +571,21 @@ String transform(String? type) {
     return '军棋';
   } else {
     return '五子棋';
+  }
+}
+
+String routesTransform(String? type) {
+  if (type == null) {
+    return '';
+  }
+  if (type.contains('ChineseChess')) {
+    return '/ChineseChessBoard';
+  } else if (type.contains('Go')) {
+    return '/GoBoard';
+  } else if (type.contains('military')) {
+    return '/MilitaryBoard';
+  } else {
+    return '/FirBoard';
   }
 }
 

@@ -83,7 +83,7 @@ async function main(req, context) {
   try {
     const db = await connectDB();
     const { roomId, type, result } = req.body;
-    console.log('result', result);
+    console.log('result', roomId,type,result);
     const roomCollection = db.collection('Room');
     const roomRes = await roomCollection.findOne({ _id: new ObjectId(roomId) });
 

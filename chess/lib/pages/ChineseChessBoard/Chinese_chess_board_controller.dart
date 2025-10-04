@@ -78,9 +78,11 @@ class ChineseChessBoardController extends GetxController {
   RxInt opponentStepTime = 0.obs;
   String result = '和';
   String roomId = '';
+  String socketRoomId = '';
   final moves = [];
   int requestUndoCnt = 0;
   int requestDrawCnt = 0;
+  bool isOpenReconnectDialog = false;
   ChineseChessPieceModel capturedPiece = ChineseChessPieceModel(
     type: '',
     isRed: false,
@@ -103,7 +105,6 @@ class ChineseChessBoardController extends GetxController {
   StreamSubscription<dynamic>? _opponentDisconnectSubscription;
   StreamSubscription<dynamic>? _reconnectSubscription;
   StreamSubscription<dynamic>? _opponentReconnectSubscription;
-  StreamSubscription<dynamic>? _opponentDealInvitationSubscription;
   StreamSubscription<dynamic>? _opponentReadySubscription;
   StreamSubscription<dynamic>? _roomJoinedSubscription;
   StreamSubscription<dynamic>? _receiveMessagesSubscription;
@@ -155,7 +156,8 @@ class ChineseChessBoardController extends GetxController {
     // 我方断线
     _disconnectSubscription = socketService.onDisconnect.listen((data) {
       if (stage.value == GameStage.playing) {
-        print('onDisconnect,断开连接,${data}');
+        print('onDisconnect,断开连接');
+        isOpenReconnectDialog = true;
         Get.dialog(
           ShowMessageDialog(content: '正在重新连接'),
           barrierDismissible: false,
@@ -166,10 +168,19 @@ class ChineseChessBoardController extends GetxController {
 
     // 重连获取棋盘数据
     _reconnectSubscription = socketService.onReconnect.listen((data) {
-      Get.back();
+      if (isOpenReconnectDialog) {
+        Get.back();
+        isOpenReconnectDialog = false;
+      }
       print('onReconnect重新连接,$data');
       if (data['status'] == "finished") {
-        overGame(data['result']['winner'], data['result']['reason']);
+        String res = data['result']['winner'] == playerInfo['me']['accountId']
+            ? '胜'
+            : data['result']['winner'] ==
+                  playerInfo['opponent']['accountId'].value
+            ? '败'
+            : '和';
+        overGame(res, data['result']['reason']);
         return;
       }
       if (data['moves'].length > moves.length) {
@@ -210,35 +221,8 @@ class ChineseChessBoardController extends GetxController {
       });
     });
 
-    // 对方处理邀请
-    _opponentDealInvitationSubscription = socketService.onOpponentDealInvitation
-        .listen((data) {
-          print('onOpponentDealInvitation,对方处理邀请,${data}');
-          if (data['deal'] == 'reject') {
-            Get.dialog(
-              ShowMessageDialog(content: '对方拒绝了你的邀请'),
-              barrierDismissible: false,
-              barrierColor: Colors.transparent,
-            );
-          } else {
-            Get.dialog(
-              ShowMessageDialog(content: '对方在对局中'),
-              barrierDismissible: false,
-              barrierColor: Colors.transparent,
-            );
-          }
-          Future.delayed(const Duration(milliseconds: 1500), () {
-            Get.back();
-          });
-        });
-
     // 对方准备
-    _opponentReadySubscription = socketService.onOpponentReady.listen((
-      accountId,
-    ) {
-      if (accountId != playerInfo['opponent']['accountId'].value) {
-        return;
-      }
+    _opponentReadySubscription = socketService.onOpponentReady.listen((_) {
       print('onOpponentReady,对方准备');
       Get.dialog(
         ShowMessageDialog(content: '对方已准备'),
@@ -263,7 +247,6 @@ class ChineseChessBoardController extends GetxController {
     // 房间建立
     _roomJoinedSubscription = socketService.onRoomJoined.listen((data) {
       print('onRoomJoined,房间建立,${data}');
-      roomId = data['roomId'];
       if (playerInfo['me']['accountId'] == data['inviter']['accountId']) {
         playerInfo['opponent']['accountId'].value =
             data['invitee']['accountId'];
@@ -308,36 +291,44 @@ class ChineseChessBoardController extends GetxController {
         'roomId': roomId,
       });
       overGame('败', 'surrender');
-    } else {
-      Get.back();
     }
     _waitingSubscription?.cancel();
     _waitingSubscription = null;
+
     _opponentDisconnectSubscription?.cancel();
     _opponentDisconnectSubscription = null;
+
     _opponentReconnectSubscription?.cancel();
     _opponentReconnectSubscription = null;
+
     _disconnectSubscription?.cancel();
     _disconnectSubscription = null;
+
     _reconnectSubscription?.cancel();
     _reconnectSubscription = null;
+
     _matchSubscription?.cancel();
     _matchSubscription = null;
-    _opponentDealInvitationSubscription?.cancel();
-    _opponentDealInvitationSubscription = null;
+
     _opponentReadySubscription?.cancel();
     _opponentReadySubscription = null;
+
     _opponentLeaveSubscription?.cancel();
     _opponentLeaveSubscription = null;
+
     _roomJoinedSubscription?.cancel();
     _roomJoinedSubscription = null;
+
     _receiveMessagesSubscription?.cancel();
     _receiveMessagesSubscription = null;
+
     _receiveActionsSubscription?.cancel();
     _receiveActionsSubscription = null;
+
     _moveSubscription?.cancel();
     _moveSubscription = null;
     _moveListenerInitialized = false;
+
     chatInputController.dispose();
     Get.delete<ChineseChessBoardController>();
     super.onClose();
@@ -528,7 +519,7 @@ class ChineseChessBoardController extends GetxController {
   }
 
   // 初始化游戏信息
-  void initplayerInfo() {
+  void initPlayerInfo() {
     if (!_moveListenerInitialized) {
       print("监听棋子移动事件");
       _moveSubscription = socketService.onMove.listen((moveData) {
@@ -1201,21 +1192,6 @@ class ChineseChessBoardController extends GetxController {
       prePieces,
       preChessBoard,
     );
-    // if (!isInCheck) {
-    //   print(
-    //     prePieces
-    //         .map((p) => '${p.type},${p.isRed},${p.pos.row},${p.pos.col}')
-    //         .join('\n'),
-    //   );
-    //   for (int i = 0; i < preChessBoard.length; i++) {
-    //     String row = '';
-    //     for (int j = 0; j < preChessBoard[i].length; j++) {
-    //       final piece = preChessBoard[i][j];
-    //       row += (piece != null ? '${piece.type} ' : '· ') + '  '; // 用·表示空位
-    //     }
-    //     print(row);
-    //   }
-    // }
     return isInCheck;
   }
 
@@ -1243,13 +1219,12 @@ class ChineseChessBoardController extends GetxController {
   // 开始匹配
   void startMatching() async {
     stage.value = GameStage.matching;
-    initplayerInfo();
+    initPlayerInfo();
 
     // 等待一次匹配成功
     _matchSubscription?.cancel();
     _matchSubscription = socketService.onMatchSuccess.listen((data) {
       print('okok');
-      // print("匹配成功 => $data");
       print('match end:');
       GlobalData.isPlaying = true;
       stage.value = GameStage.playing;
@@ -1277,7 +1252,8 @@ class ChineseChessBoardController extends GetxController {
       },
       'type': '$type',
       'aiLevel': aiLevel,
-      'inviter': '${opponentAccountId == '空座' ? '' : opponentAccountId}',
+      'opponentAccountId':
+          '${opponentAccountId == '空座' ? '' : opponentAccountId}',
     };
     socketService.sendMatchRequest(params['type'], params);
   }
@@ -1321,6 +1297,7 @@ class ChineseChessBoardController extends GetxController {
       'step': {
         'accountId': playerInfo['me']['accountId'],
         'type': type,
+        'isRed': playerInfo['me']['isRed'].value,
         'from': {'row': from.row, 'col': from.col},
         'to': {'row': to.row, 'col': to.col},
         'timeLeft': playerInfo['me']['timeLeft'].value,
@@ -1332,7 +1309,7 @@ class ChineseChessBoardController extends GetxController {
 
   // 获取对方落子
   void getOpponentMove(Map<String, dynamic> moveData) async {
-    if(stage.value != GameStage.playing){
+    if (isInCheckMateNotifier.value ==true || stage.value != GameStage.playing) {
       return;
     }
     print('moveData,$moveData');
@@ -1421,40 +1398,6 @@ class ChineseChessBoardController extends GetxController {
     }
   }
 
-  // 后端推送邀请通知给好友
-  Future<void> sendInvitation(String accountId) async {
-    final Map<String, dynamic> params = {
-      'accountId': GlobalData.userInfo['accountId'],
-      'invitation': {
-        'accountId': accountId,
-        'type': type,
-        'gameTime': gameTime.value,
-        'stepTime': stepTime.value,
-      },
-    };
-    Dio dio = new Dio();
-    try {
-      final response = await dio.post(
-        '${GlobalData.url}/SendInvitation',
-        data: params,
-        options: Options(headers: {'Content-Type': 'application/json'}),
-      );
-      if (response.data['code'] == 0) {
-        print('发送邀请成功');
-        Get.dialog(
-          ShowMessageDialog(content: '发送邀请成功'),
-          barrierColor: Colors.transparent,
-          barrierDismissible: false,
-        );
-        Future.delayed(const Duration(milliseconds: 1500), () {
-          Get.back();
-        });
-      }
-    } catch (e) {
-      print('发送邀请失败:$e');
-    }
-  }
-
   // 悔棋操作
   void undo() {
     print('悔棋操作');
@@ -1525,7 +1468,6 @@ class ChineseChessBoardController extends GetxController {
         );
         Future.delayed(const Duration(milliseconds: 1500), () {
           Get.back();
-          print('Get.back()');
         });
       }
     } else {
@@ -1536,7 +1478,6 @@ class ChineseChessBoardController extends GetxController {
       );
       Future.delayed(const Duration(milliseconds: 1500), () {
         Get.back();
-        print('Get.back()');
       });
     }
   }
@@ -1570,7 +1511,6 @@ class ChineseChessBoardController extends GetxController {
       );
       Future.delayed(Duration(milliseconds: 1500), () {
         Get.back();
-        print('Get.back()');
       });
     }
   }
@@ -1587,7 +1527,6 @@ class ChineseChessBoardController extends GetxController {
         cancelText: '取消',
         onConfirm: () {
           Get.back();
-          print('Get.back()');
           socketService.sendActions({
             'type': '认输',
             'accountId': GlobalData.userInfo['accountId'],
@@ -1597,7 +1536,6 @@ class ChineseChessBoardController extends GetxController {
         },
         onCancel: () {
           Get.back();
-          print('Get.back()');
         },
       ),
       barrierColor: Colors.transparent,
@@ -1615,12 +1553,12 @@ class ChineseChessBoardController extends GetxController {
         cancelText: '拒绝',
         onConfirm: () {
           Get.back();
-          print('Get.back()');
+
           acceptOpponentUndo();
         },
         onCancel: () {
           Get.back();
-          print('Get.back()');
+
           rejectOpponentUndo();
         },
       ),
@@ -1662,7 +1600,7 @@ class ChineseChessBoardController extends GetxController {
         },
         onCancel: () {
           Get.back();
-          print('Get.back()');
+
           rejectOpponentDraw();
         },
       ),
@@ -1699,13 +1637,13 @@ class ChineseChessBoardController extends GetxController {
     );
     Future.delayed(const Duration(milliseconds: 1000), () {
       Get.back();
-      print('Get.back()');
+
       overGame('胜', 'surrender');
     });
   }
 
   // 游戏结束
-  void overGame(String res, String reason) async {
+  void overGame(String res, String reason) async { 
     print('res,$res,reason,$reason');
     GlobalData.isPlaying = false;
     Dio dio = Dio();
@@ -1755,6 +1693,7 @@ class ChineseChessBoardController extends GetxController {
     _moveSubscription = null;
     _moveListenerInitialized = false;
 
+    roomId = '';
     stage.value = GameStage.over;
     result = res;
     selectedPiece.value = ChineseChessPieceModel(

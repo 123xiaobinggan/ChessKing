@@ -1,11 +1,16 @@
 const { ObjectId } = require('bson');
-module.exports = (io, socket, db, accountIdMap, roomCollection) => {
-  //断线重连
+//断线重连
+module.exports = (io, socket,accountIdMap, roomCollection) => {
   socket.on('reconnectRoom', async (data) => {
+    
     const accountId = data.accountId;
     const roomId = data.roomId;
+    const socketRoomId = data.socketRoomId;
     console.log('data', data);
     console.log(`玩家 ${accountId} 尝试重连房间 ${roomId}`);
+    if(socketRoomId){
+      socket.join(socketRoomId);
+    }
 
     try {
       const room = await roomCollection.findOne({ _id: new ObjectId(roomId) });
@@ -24,26 +29,19 @@ module.exports = (io, socket, db, accountIdMap, roomCollection) => {
         return;
       }
 
-      // 加入 socket.io 房间
-      socket.join(roomId);
-      socket.accountId = accountId;
-      socket.roomId = roomId;
-      accountIdMap[accountId] = socket.id;
+      socket.data.accountId = accountId;
+      socket.data.socketRoomId = socketRoomId
+      socket.data.roomId = roomId
+      accountIdMap[accountId] = socket;
 
-      let opponentSocketId = '';
+      let opponentSocket = '';
 
       // 更新玩家 socketId(方便继续通信)
       if (room.player1.accountId === accountId) {
-        room.player1.id = socket.id;
-        opponentSocketId = room.player2.id;
+        opponentSocket = accountIdMap[room.player2.accountId];
       } else {
-        room.player2.id = socket.id;
-        opponentSocketId = room.player1.id;
+        opponentSocket = accountIdMap[room.player1.accountId];
       }
-      await roomCollection.updateOne(
-        { _id: new ObjectId(roomId) },
-        { $set: { player1: room.player1, player2: room.player2 } }
-      );
 
       // 把当前棋局状态发给玩家
       socket.emit("reconnect_success", {
@@ -55,8 +53,8 @@ module.exports = (io, socket, db, accountIdMap, roomCollection) => {
         result: room.result,
       });
 
-      if (opponentSocketId) {
-        io.to(opponentSocketId).emit('opponentReconnect');
+      if (opponentSocket) {
+        opponentSocket.emit('opponentReconnect');
       }
 
       console.log(`玩家 ${accountId} 重连成功，进入房间 ${roomId}`);

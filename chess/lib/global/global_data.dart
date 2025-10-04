@@ -28,4 +28,5 @@ class GlobalData extends GetxController {
   static bool isPlaying = false;
   static late PackageInfo packageInfo;
   static String downloadUrl = "";
+  static Map<String,bool> friendsOnline = {};
 }

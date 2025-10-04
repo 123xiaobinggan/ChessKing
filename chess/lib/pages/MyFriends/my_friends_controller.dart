@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import '../../widgets/build_personal_info_card.dart';
@@ -15,6 +17,8 @@ class MyFriendsController extends GetxController {
   final TextEditingController searchController =
       TextEditingController(); // 搜索控制器
   final socketService = GlobalData.socketService;
+  StreamSubscription<dynamic>? _receiveFriendsOnlinesubscription;
+  StreamSubscription<dynamic>? _receiveFriendsOfflinesubscription;
 
   @override
   void onInit() async {
@@ -24,6 +28,37 @@ class MyFriendsController extends GetxController {
       await getFriends(); // 初始化时获取好友列表
       getNotAddedFriends(); // 初始化时获取未添加的好友列表
     });
+    _receiveFriendsOnlinesubscription = socketService.onReceiveFriendsOnline
+        .listen((data) {
+          print('onReceiveFriendsOnline: $data');
+          for (var friend in friends) {
+            if (friend['accountId'] == data['accountId']) {
+              friend['online'].value = true; // 更新好友在线状态
+              break; // 找到后退出循环
+            }
+          }
+        });
+
+    _receiveFriendsOfflinesubscription = socketService.onReceiveFriendsOffline
+        .listen((data) {
+          print('onReceiveFriendsOffline: $data');
+          for (var friend in friends) {
+            if (friend['accountId'] == data['accountId']) {
+              friend['online'].value = false; // 更新好友在线状态
+              break; // 找到后退出循环
+            }
+          }
+        });
+  }
+
+  @override
+  void onClose() {
+    super.onClose();
+    searchController.dispose(); // 释放搜索控制器
+    _receiveFriendsOnlinesubscription?.cancel(); // 取消订阅
+    _receiveFriendsOnlinesubscription = null;
+    _receiveFriendsOfflinesubscription?.cancel(); // 取消订阅
+    _receiveFriendsOfflinesubscription = null;
   }
 
   Future<void> getFriends() async {
@@ -90,13 +125,23 @@ class MyFriendsController extends GetxController {
         snackPosition: SnackPosition.TOP, // 显示在顶部
       ); // 显示错误提示
     }
+    for (var friend in friends) {
+      if(GlobalData.friendsOnline[friend['accountId']] ?? false){
+        friend['online']= true.obs; // 获取好友在线状态
+      }else{
+        friend['online']= false.obs; // 获取好友在线状态
+      }
+    }
   }
 
   void getNotAddedFriends() async {
     print('friends,${friends.map((e) => e['accountId'])}');
     var dio = Dio();
     var params = {
-      'friends': [...friends, ...notAddFriends], // 好友列表
+      'friends': [...friends, ...notAddFriends].map((friend) {
+        // 创建一个不包含RxBool对象的新Map
+        return {'accountId': friend['accountId']};
+      }).toList(), // 好友列表
     };
     try {
       final res = await dio.post(
@@ -187,6 +232,13 @@ class MyFriendsController extends GetxController {
                                     'type': type,
                                     'gameTime': 5 * 60,
                                     'stepTime': 15,
+                                    'socketRoomId':
+                                        GlobalData.userInfo['accountId'] +
+                                        '-' +
+                                        accountId +
+                                        '-' +
+                                        DateTime.now().millisecondsSinceEpoch
+                                            .toString(),
                                   });
                                   Get.back();
                                   Get.toNamed(
@@ -252,6 +304,13 @@ class MyFriendsController extends GetxController {
                                     'type': type,
                                     'gameTime': 10 * 60,
                                     'stepTime': 30,
+                                    'socketRoomId':
+                                        GlobalData.userInfo['accountId'] +
+                                        '-' +
+                                        accountId +
+                                        '-' +
+                                        DateTime.now().millisecondsSinceEpoch
+                                            .toString(),
                                   });
 
                                   Get.back();
@@ -318,6 +377,13 @@ class MyFriendsController extends GetxController {
                                     'type': type,
                                     'gameTime': 15 * 60,
                                     'stepTime': 60,
+                                    'socketRoomId':
+                                        GlobalData.userInfo['accountId'] +
+                                        '-' +
+                                        accountId +
+                                        '-' +
+                                        DateTime.now().millisecondsSinceEpoch
+                                            .toString(),
                                   });
 
                                   Get.back();
@@ -384,6 +450,13 @@ class MyFriendsController extends GetxController {
                                     'type': type,
                                     'gameTime': 20 * 60,
                                     'stepTime': 60,
+                                    'socketRoomId':
+                                        GlobalData.userInfo['accountId'] +
+                                        '-' +
+                                        accountId +
+                                        '-' +
+                                        DateTime.now().millisecondsSinceEpoch
+                                            .toString(),
                                   });
                                   Get.back();
                                   Get.toNamed(
@@ -673,7 +746,7 @@ class MyFriendsController extends GetxController {
         }
       }
     } catch (e) {
-      print(e);
+      print('e:$e');
     }
   }
 

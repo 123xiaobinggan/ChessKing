@@ -47,7 +47,7 @@ class ChineseChessBoard extends StatelessWidget {
               ),
               AppBar(
                 title: Text(
-                  '小试牛刀',
+                  transformType(controller.type),
                   style: TextStyle(
                     color: Colors.brown.shade800,
                     fontSize: 20,
@@ -295,5 +295,15 @@ class ChineseChessBoard extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+String transformType(String type) {
+  if (type.contains("Friend")) {
+    return "好友对战";
+  } else if (type.contains("Ai")) {
+    return "人机对战";
+  } else {
+    return "小试牛刀";
   }
 }

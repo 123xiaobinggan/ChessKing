@@ -7,6 +7,7 @@ async function main(req, context) {
   const { friends } = req.body; // 已有好友列表
   const db = await connectDB();
   const userCollection = db.collection('UserInfo');
+  console.log('friends',friends)
 
   try {
     // 查找不在好友列表中的用户，限制10个

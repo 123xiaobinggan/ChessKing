@@ -1,17 +1,9 @@
-const { ObjectId } = require('bson');
+
 module.exports = (io, socket, roomCollection, accountIdMap) => {
     socket.on('sendMessages', async (message) => {
         console.log('sendMessages', message);
-        const room = await roomCollection.findOne({
-            _id: new ObjectId(message.roomId)
-        });
-        if (room) {
-            const res = await roomCollection.updateOne(
-                { _id: new ObjectId(message.roomId) },
-                { $push: { messages: message } }
-            )
-            console.log('res', res);
-        }
-        io.to(message.roomId).emit('receiveMessages', message);
+        const socketRoomId = socket.data.socketRoomId
+        console.log('socketRoomId',socketRoomId)
+        io.to(socketRoomId).emit('receiveMessages', message);
     })
 }

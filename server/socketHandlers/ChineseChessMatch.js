@@ -32,16 +32,17 @@ module.exports = (io, socket, db, waitingPlayers, roomCollection) => {
 
       const res = await roomCollection.insertOne(newRoom);
       const roomId = res.insertedId.toString();
-
+      const socketRoomId = roomId;
       // 加入 socket.io 房间
-      socket.join(roomId);
-      opponent.socket.join(roomId);
-      socket.accountId = player['accountId'];
-      socket.roomId = roomId;
-      opponent.socket.accountId = player2['accountId'];
-      opponent.socket.roomId = roomId;
+      socket.join(socketRoomId);
+      opponent.socket.join(socketRoomId);
+      socket.data.accountId = player['accountId'];
+      socket.data.socketRoomId = socketRoomId;
+      opponent.socket.data.accountId = player2['accountId'];
+      opponent.socket.data.socketRoomId = socketRoomId;
 
-      io.to(roomId).emit("match_success", {
+      io.to(socketRoomId).emit("match_success", {
+        socketRoomId,
         roomId,
         player1,
         player2,

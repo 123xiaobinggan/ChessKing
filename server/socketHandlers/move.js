@@ -2,7 +2,7 @@ const { ObjectId } = require('bson');
 const { pikafish, cancelAI, boardToFEN, uciToMove } = require('../pikafish.js')
 const pieces = ['車', '馬', '相', '象', '仕', '將', '帥', '炮', '兵', '卒'];
 
-module.exports = (io, socket, db, roomCollection) => {
+module.exports = (io, socket, db, roomCollection,accountIdMap) => {
   socket.on('move', async (move) => {
     console.log('move', move);
     try {
@@ -27,9 +27,9 @@ module.exports = (io, socket, db, roomCollection) => {
       // 确定对手是谁
       let opponentSocketId = null;
       if (room.player1['accountId'] === move['step']['accountId']) {
-        opponentSocketId = room.player2.id;   // 你在匹配时存的 socket.id
+        opponentSocketId = accountIdMap[room.player2.accountId]?.id
       } else if (room.player2['accountId'] === move['step']['accountId']) {
-        opponentSocketId = room.player1.id;
+        opponentSocketId = accountIdMap[room.player1.accountId]?.id;
       }
 
       if (room.type.includes("Ai")) {
@@ -39,6 +39,7 @@ module.exports = (io, socket, db, roomCollection) => {
           const aiMove = uciToMove(await pikafish(fen, room.player2.level == '初级' ? 3 : (room.player2.level == "中等" ? 8 : 12)), room.board);
           console.log('aiMove', typeof aiMove, aiMove)
           aiMove['step'].accountId = room.player2.accountId
+          aiMove['step'].isRed = room.player2.isRed
           // 如果ai执黑,则需要翻转棋盘
           if (!room.player2.isRed) {
             aiMove['step']['from']['row'] = 9 - aiMove['step']['from']['row'];
@@ -56,8 +57,8 @@ module.exports = (io, socket, db, roomCollection) => {
           );
           console.log('aiMove', aiMove);
 
-          io.to(room.player1.id).emit("move", aiMove);
-
+          io.to(socket.data.socketRoomId).emit("move", aiMove);
+          return;
         }
       }
       console.log('opponentSocketId',opponentSocketId);
@@ -82,7 +83,6 @@ function update(room, move) {
   if (!pieces.includes(move['step']['type'])) {
     return;
   }
-  // console.log('copyMove',copyMove);
   // 坐标修正（如果玩家执黑，需要翻转棋盘）
   const needFlip =
     (room.player1.accountId === copyMove.step.accountId && room.player1.isRed === false) ||

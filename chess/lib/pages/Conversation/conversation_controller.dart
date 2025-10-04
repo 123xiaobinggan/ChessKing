@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
 import 'package:get/get.dart';
 import '../../global/global_data.dart';
 import 'package:dio/dio.dart';
@@ -18,13 +17,14 @@ class ConversationsController extends GetxController {
     _receiveConversationMessagesubscription = socketServeice
         .onReceiveConversationMessage
         .listen((message) {
+          print('onReceiveConversationMessage: $message');
           for (var conv in conversationsList) {
             if (conv.conversationId == message['conversationId']) {
               conv.lastMessage.value = message['content']; // 更新最后一条消息
               conv.lastTime.value = DateTime.parse(
                 message['createdAt'],
               ).toLocal(); // 更新最后一条消息的时间
-              if (conv.opponent['accountId'] !=
+              if (message['receiverAccountId'] ==
                   GlobalData.userInfo['accountId']) {
                 conv.unreadCnt.value++; // 未读消息数量加1
               }

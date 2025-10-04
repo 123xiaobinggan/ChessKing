@@ -20,7 +20,6 @@ import '../bindings/recharge.dart';
 import '../bindings/game_record.dart';
 import '../bindings/game_replay.dart';
 import '../bindings/messages.dart';
-import '../bindings/update.dart';
 import '../bindings/chat_window.dart';
 
 import '../../pages/Version/version.dart';
@@ -128,7 +127,7 @@ class AppPages {
     GetPage(
       name: AppRoutes.ChineseChessBoard,
       page: () => ChineseChessBoard(),
-      binding: ChineseChessBoardBindings(),
+      binding: ChineseChessBoardBindings(tag: Get.parameters['tag'] ?? ''),
     ),
     GetPage(
       name: AppRoutes.Recharge,

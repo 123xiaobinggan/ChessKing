@@ -30,7 +30,9 @@ class ChatWindowController extends GetxController {
     print('opponentInfo: $opponentInfo');
     await getConversationId();
     print('conversationId: $conversationId');
-    await getMessages();
+    if (conversationId != '') {
+      await getMessages();
+    }
     _ReceiveConversationMessageSubscription = socketServeice
         .onReceiveConversationMessage
         .listen((message) {
@@ -96,7 +98,15 @@ class ChatWindowController extends GetxController {
       if (res.data['code'] == 0) {
         conversationId = res.data['conversationId'];
       } else {
-        print('获取会话ID失败: ${res.data['message']}');
+        print('获取会话ID失败: ${res.data['msg']}');
+        Get.dialog(
+          ShowMessageDialog(content: '获取会话ID失败'),
+          barrierDismissible: false,
+          barrierColor: Colors.transparent,
+        );
+        Future.delayed(Duration(milliseconds: 1500), () {
+          Get.back();
+        });
       }
     } catch (e) {
       print('e,$e');
@@ -129,6 +139,14 @@ class ChatWindowController extends GetxController {
         buildMessageWithTimeDivider(newMessages);
       } else {
         print('获取消息列表失败: ${res.data['message']}');
+        Get.dialog(
+          ShowMessageDialog(content: '获取消息列表失败'),
+          barrierDismissible: false,
+          barrierColor: Colors.transparent,
+        );
+        Future.delayed(Duration(milliseconds: 1500), () {
+          Get.back();
+        });
       }
     } catch (e) {
       print('e,$e');
@@ -137,6 +155,17 @@ class ChatWindowController extends GetxController {
 
   // 发送消息
   Future<void> sendMessage() async {
+    if (conversationId == '') {
+      Get.dialog(
+        ShowMessageDialog(content: '发送错误'),
+        barrierDismissible: false,
+        barrierColor: Colors.transparent,
+      );
+      Future.delayed(Duration(milliseconds: 1500), () {
+        Get.back();
+      });
+      return;
+    }
     Message message = Message(
       conversationId: conversationId,
       senderAccountId: GlobalData.userInfo['accountId'], // 发送者ID
@@ -210,7 +239,7 @@ class ChatWindowController extends GetxController {
       // 再加消息本身
       tempDisplayItems.add({"type": "message", "message": current});
     }
-    displayItems.insertAll(0,tempDisplayItems);
+    displayItems.insertAll(0, tempDisplayItems);
   }
 
   // 展示个人信息
@@ -284,7 +313,7 @@ class ChatWindowController extends GetxController {
     }
   }
 
-  // 发送消息
+  // 点击对方头像并点击发送消息
   void onSendConversationMessage(String accountId) {
     String currentRoute = Get.routing.current;
     print('currentRoute: $currentRoute');

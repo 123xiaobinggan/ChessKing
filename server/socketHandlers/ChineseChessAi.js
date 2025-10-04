@@ -2,7 +2,7 @@ const { ObjectId } = require('bson');
 const { pikafish, boardToFEN, uciToMove } = require('../pikafish.js')
 const pieces = ['車', '馬', '相', '象', '仕', '將', '帥', '炮', '兵', '卒'];
 
-module.exports = (io, socket, db, roomCollection) => {
+module.exports = (io, socket, roomCollection) => {
   socket.on("ChineseChessAi", async (params) => {
     console.log('ChineseChessAi收到消息:', params);
     try {
@@ -14,7 +14,6 @@ module.exports = (io, socket, db, roomCollection) => {
       // 随机决定谁是红方
       const isRed = Math.random() > 0.5;
       player.isRed = isRed;
-      // player.isRed = true
 
       // 构造一个 AI 虚拟玩家
       const aiPlayer = {
@@ -41,15 +40,19 @@ module.exports = (io, socket, db, roomCollection) => {
 
       const res = await roomCollection.insertOne(newRoom);
       const roomId = res.insertedId.toString();
+      const socketRoomId = roomId;
 
       // 玩家加入房间
-      socket.join(roomId);
+      socket.join(socketRoomId);
+      socket.data.accountId = params['player']['accountId'];
+      socket.data.socketRoomId = socketRoomId;
 
       // 通知客户端匹配成功
       socket.emit("match_success", {
         roomId,
         player1: player,
         player2: aiPlayer,
+        socketRoomId
       });
 
       //调用ai模型下第一步

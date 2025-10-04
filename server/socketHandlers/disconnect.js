@@ -1,7 +1,7 @@
 const { ObjectId } = require('bson');
-module.exports = (io, socket, db, waitingPlayers, accountIdMap, roomCollection) => {
+module.exports = (io, socket, waitingPlayers, userCollection, accountIdMap) => {
   socket.on('disconnect', async () => {
-    console.log('断开连接', socket.id,socket.accountId,socket.roomId);
+    console.log('断开连接', socket.id, socket.data.accountId, socket.data.roomId);
 
     for (var i = 0; i < waitingPlayers.length; i++) {
       var player = waitingPlayers[i]
@@ -11,24 +11,34 @@ module.exports = (io, socket, db, waitingPlayers, accountIdMap, roomCollection) 
       }
     }
 
-    if (socket.roomId) {
-      const room = await roomCollection.findOne({ _id: new ObjectId(socket.roomId) });
-      console.log('socket.accountId', socket.accountId, socket.roomId);
-      if (room) {
-        if (room.player1.accountId == socket.accountId) {
-          console.log('player2', room.player2,room.player2.accountId, typeof room.player2.accountId);
-          console.log('player2.id',room.player2.id)
-          io.to(room.player2.id).emit('opponentDisconnect');
-        }
-        else {
-          console.log('player1.id', room.player1.id);
-          console.log('player1', room.player1,room.player1.accountId);
-          io.to(room.player1.id).emit('opponentDisconnect');
-        }
+    if (socket.data.roomId) {
+      const socketRoomId = socket.data.socketRoomId;
+      console.log('socketRoomId', socketRoomId)
+      if (socketRoomId) {
+        io.to(socketRoomId).emit('opponentDisconnect', { accountId: socket.data.accountId })
+      } else {
+        console.log('socketRoomId为空', socketRoomId)
       }
     } else {
-      console.log('socket.roomId为空')
+      console.log('socket.data.roomId为空')
     }
-    delete accountIdMap[socket.accountId];
+    delete accountIdMap[socket.data.accountId];
+    if (socket.data.accountId) {
+      const user = await userCollection.findOne({
+        accountId: socket.data.accountId
+      });
+      if (user) {
+        const friends = user.friends;
+        socketFriends = [];
+        for (var friendAccountId of friends) {
+          if (accountIdMap[friendAccountId]) {
+            socketFriends.push(accountIdMap[friendAccountId]);
+          }
+        }
+        for (var soc of socketFriends) {
+          soc.emit('receiveFriendsOffline', { accountId: socket.data.accountId })
+        }
+      }
+    }
   });
 }

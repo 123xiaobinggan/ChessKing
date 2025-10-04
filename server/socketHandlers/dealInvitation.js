@@ -1,43 +1,51 @@
-const { ObjectId } = require('bson');
-module.exports = (io, socket, userCollection, roomCollection, accountIdMap) => {
+
+module.exports = (io, socket, userCollection, accountIdMap) => {
     socket.on('dealInvitation', async (data) => {
         console.log('dealInvitation', data);
         const inviterAccountId = data['inviterAccountId'];
         const inviteeAccountId = data['inviteeAccountId'];
+        const socketRoomId = data['socketRoomId'];
+        console.log('dealInvitation:socketRoomId', socketRoomId)
         if (data['deal'] == "accept") {
-            const inviteeSocket = accountIdMap[inviteeAccountId];
-            const inviteeUser = await userCollection.findOne({
-                accountId: inviteeAccountId
-            });
-            const room = await roomCollection.findOne({
-                _id: new ObjectId(data['roomId'])
-            });
-            if (!room) {
+            const client = await io.in(socketRoomId).allSockets();
+            console.log('client', client);
+            if (client.size == 0) {
                 socket.emit('roomNotExist');
                 return;
             }
-            const player2 = {
-                id: inviteeSocket.id,
-                accountId: inviteeAccountId,
-                username: inviteeUser.username,
-                avatar: inviteeUser.avatar,
-                level: inviteeUser[transform(data['type'])]['level'],
-                isRed: false,
-                timeLeft: data['timeMode']
-            };
-            room.player2 = player2;
-            const res = await roomCollection.updateOne(
-                { _id: new ObjectId(data['roomId']) },
-                { $set: {player2} }
-            );
-            inviteeSocket.join(data['roomId']);
-            inviteeSocket.roomId = data['roomId'];
-            inviteeSocket.accountId = inviteeAccountId;
-            io.to(data['roomId']).emit("room_joined", {
-                roomId:data['roomId'],
-                inviter: room.player1,
+            socket.join(socketRoomId);
+            socket.data.socketRoomId = socketRoomId;
+            console.log('socket.data.socketRoomId', socketRoomId);
+
+            const users = await userCollection.find(
+                { accountId: { $in: [inviterAccountId, inviteeAccountId] } },
+                { projection: { password: 0 } } // 直接排除 password 字段
+            ).toArray();
+
+            let player1 = users.find(u => u.accountId === inviterAccountId);
+            let player2 = users.find(u => u.accountId === inviteeAccountId);
+
+            player1 = {
+                accountId: player1.accountId,
+                username: player1.username,
+                avatar: player1.avatar,
+                level: player1[transform(data['type'])].level,
+                timeLeft: data['gameTime']
+            }
+
+            player2 = {
+                accountId: player2.accountId,
+                username: player2.username,
+                avatar: player2.avatar,
+                level: player2[transform(data['type'])].level,
+                timeLeft: data['gameTime']
+            }
+
+            io.to(socketRoomId).emit("room_joined", {
+                socketRoomId,
+                inviter: player1,
                 invitee: player2,
-                gameTime: room.timeMode
+                gameTime: data['gameTime']
             });
         } else {
             if (accountIdMap[inviterAccountId]) {
@@ -59,3 +67,4 @@ function transform(type) {
         return 'Fir'
     }
 }
+
