@@ -7,6 +7,8 @@
 
 有好友功能，可以邀请好友在线对弈，也可以自行发现并添加陌生人
 
+可以实时查看好友在线和离线
+
 健全的等级系统
 
 支持对弈记录，历史对弈回放功能
@@ -35,6 +37,8 @@ Tech stack: flutter + getx + nodejs + mongoDB + socket.io + JPush + pikafish + 2
 A complete user ecosystem is built, with recharge, editing, active value, etc. features.
 netsh interface show interface
 Has friend function, can invite friends to play online, or discover and add strangers.
+
+Can view friends online and offline in real time.   
 
 A robust level system.
 
