@@ -10,6 +10,7 @@ import '/widgets/confirm_dialog.dart';
 import '/widgets/show_message_dialog.dart';
 import '/widgets/build_personal_info_card.dart';
 import '../MyFriends/my_friends_controller.dart';
+import '../../api/soundManager.dart';
 
 class ChineseChessBoardController extends GetxController {
   String type = 'ChineseChessMatch'; // 游戏类型
@@ -692,7 +693,7 @@ class ChineseChessBoardController extends GetxController {
   }
 
   // 移动我方棋子到可移动点
-  void moveSelectedPiece(int newRow, int newCol) {
+  void moveSelectedPiece(int newRow, int newCol) async {
     // 检查新位置是否合法
     bool isContain = false;
     for (var point in availableMove) {
@@ -729,6 +730,8 @@ class ChineseChessBoardController extends GetxController {
     resetSelectedPiece(); // 移动后重置选中棋子
     turnTransition(); // 切换回合
 
+    SoundManager.movePieceChineseChessPieceSound();
+
     // 判断是否处于绝杀状态
     isInCheckMateNotifier.value = checkmate(playerInfo['opponent']);
     if (isInCheckMateNotifier.value == true) {
@@ -748,7 +751,7 @@ class ChineseChessBoardController extends GetxController {
   }
 
   // 移动对方棋子
-  void moveOpponentPiece(Point from, Point to) {
+  void moveOpponentPiece(Point from, Point to) async {
     print('moveOpponentPiece');
     if (to.row > 9 || to.row < 0 || to.col > 8 || to.col < 0) {
       return;
@@ -765,6 +768,8 @@ class ChineseChessBoardController extends GetxController {
         break;
       }
     }
+
+    SoundManager.movePieceChineseChessPieceSound();
 
     // 判断是否处于绝杀状态
     isInCheckMateNotifier.value = checkmate(playerInfo['me']);
@@ -1651,6 +1656,7 @@ class ChineseChessBoardController extends GetxController {
   // 游戏结束
   void overGame(String res, String reason) async {
     print('res,$res,reason,$reason');
+    SoundManager.gameOverChineseChessSound();
     GlobalData.isPlaying = false;
     Dio dio = Dio();
     final Map<String, dynamic> params = {

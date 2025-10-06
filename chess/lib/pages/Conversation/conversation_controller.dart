@@ -80,9 +80,9 @@ class ConversationsController extends GetxController {
     try {
       final res = await dio.post(GlobalData.url + '/MarkAsRead', data: data);
       if (res.data['code'] == 0) {
-        print('标记已读成功: ${res.data['message']}');
+        print('标记已读成功: ${res.data['msg']}');
       } else {
-        print('标记已读失败: ${res.data['message']}');
+        print('标记已读失败: ${res.data['msg']}');
       }
     } catch (e) {
       print('e,$e');

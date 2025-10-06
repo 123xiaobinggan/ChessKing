@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:project/pages/ChineseChessBoard/Chinese_chess_board_controller.dart';
-import 'package:project/widgets/check_alert.dart';
 import '../../widgets/Chinese_chess_board_painter.dart';
 import '../../widgets/Chinese_chess_piece_painter.dart';
-import '../../widgets/check_mate_alert.dart';
 import 'game_replay_controller.dart';
 import '/widgets/build_player_info_block.dart';
 
@@ -96,20 +93,6 @@ class GameReplay extends StatelessWidget {
                           ),
                         ),
                       ),
-
-                      // 将军提示
-                      Positioned.fill(
-                        child: CheckAlertOverlay(
-                          // isInCheckNotifier: ,
-                        ),
-                      ),
-
-                      // 绝杀提示
-                      // Positioned.fill(
-                      //   child: CheckmateAlert(
-                      //     // isInCheckMateNotifier: controller.isInCheckMateNotifier,
-                      //   ),
-                      // ),
                     ],
                   ),
                 ),

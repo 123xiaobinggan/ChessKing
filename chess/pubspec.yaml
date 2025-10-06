@@ -49,6 +49,7 @@ dependencies:
   socket_io_client: ^3.1.2
   intl: ^0.20.2
   app_settings: ^6.1.1
+  audioplayers: ^6.5.1
 
 dev_dependencies:
   flutter_test:
@@ -88,6 +89,7 @@ flutter:
       - assets/Chinese_chess/
       - assets/Check_mate/
       - assets/fonts/
+      - assets/Sound/
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import '/app/routes/app_pages.dart';
+import 'api/soundManager.dart';
 import 'start.dart';
 import 'api/pushManager.dart';
 import './api/socketService.dart'; // 引入 SocketService
@@ -15,6 +16,9 @@ void main() async {
   await PushManager.init();
   Get.put(UpdateController());
   runApp(MyApp());
+  WidgetsBinding.instance.addPostFrameCallback((_) async {
+    await SoundManager.init();
+  });
 }
 
 class MyApp extends StatefulWidget {
@@ -28,7 +32,6 @@ class _MyAppState extends State<MyApp> {
   @override
   void initState() {
     super.initState();
-    
   }
 
   @override

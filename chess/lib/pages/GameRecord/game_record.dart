@@ -92,6 +92,7 @@ class GameRecord extends StatelessWidget {
                         parameters: {
                           'roomId': record['_id'], // 传递完整的记录数据
                           'type': record['type'],
+                          'accountId':controller.accountId,
                         },
                       );
                     },

@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'chat_window_controller.dart';
 import '../../global/global_data.dart';
+import '../Conversation/conversation_controller.dart';
 
 class ChatWindow extends StatefulWidget {
   @override
@@ -11,10 +12,10 @@ class ChatWindow extends StatefulWidget {
 
 class _ChatWindowState extends State<ChatWindow> with WidgetsBindingObserver {
   final ChatWindowController controller = Get.find();
+  final ConversationsController conversationsController = Get.find();
   final ScrollController _scrollController = ScrollController();
 
-  bool  _isLoading = false; // 加载中标志
-
+  bool _isLoading = false; // 加载中标志
 
   @override
   void initState() {
@@ -25,16 +26,17 @@ class _ChatWindowState extends State<ChatWindow> with WidgetsBindingObserver {
   // 滚动监听器
   void _scrollListener() async {
     // 检查是否滚动到顶部并且当前未在加载
-    if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 50 && 
-        !_isLoading && 
+    if (_scrollController.position.pixels >=
+            _scrollController.position.maxScrollExtent - 50 &&
+        !_isLoading &&
         _scrollController.position.extentBefore > 0) {
       setState(() {
         _isLoading = true;
       });
-      
+
       // 加载更多消息
       await controller.getMessages();
-      
+
       setState(() {
         _isLoading = false;
       });
@@ -110,9 +112,11 @@ class _ChatWindowState extends State<ChatWindow> with WidgetsBindingObserver {
                   behavior: HitTestBehavior.translucent,
                   onTap: () {
                     FocusScope.of(context).unfocus(); // 收起键盘
+                    conversationsController.markAsRead(controller.conversationId);
                   },
                   onVerticalDragDown: (details) {
                     FocusScope.of(context).unfocus(); // 收起键盘
+                    conversationsController.markAsRead(controller.conversationId);
                   },
                   child: Obx(
                     () => ListView.builder(
@@ -124,12 +128,15 @@ class _ChatWindowState extends State<ChatWindow> with WidgetsBindingObserver {
                       ),
                       itemCount: controller.displayItems.length,
                       itemBuilder: (context, index) {
-                        if(_isLoading && index == controller.displayItems.length - 1) {
+                        if (_isLoading &&
+                            index == controller.displayItems.length - 1) {
                           return Center(
                             child: Container(
                               margin: EdgeInsets.all(8),
                               child: CircularProgressIndicator(
-                                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF8B4513)),
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  Color(0xFF8B4513),
+                                ),
                               ),
                             ),
                           );

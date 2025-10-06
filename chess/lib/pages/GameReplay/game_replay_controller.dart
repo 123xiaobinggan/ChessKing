@@ -10,6 +10,7 @@ import '../../widgets/show_message_dialog.dart';
 class GameReplayController extends GetxController {
   String type = 'ChineseChess';
   String roomId = '';
+  String accountId = '';
   var boardWidth = 0.0;
   var boardHeight = 0.0;
   RxMap<String, dynamic> room = <String, dynamic>{}.obs; // 游戏记录数据
@@ -34,6 +35,7 @@ class GameReplayController extends GetxController {
     super.onInit();
     type = translateType(Get.parameters['type'] ?? '象棋'); // 获取传递的类型
     roomId = Get.parameters['roomId'] ?? ''; // 获取传递的类型
+    accountId = Get.parameters['accountId']?? ''; // 获取传递的类型
     print('type,$type,roomId,$roomId');
     await fetchGameReplay();
     initPieces();
@@ -52,7 +54,7 @@ class GameReplayController extends GetxController {
         room.value = res.data['room'];
         print('获取游戏记录成功: ${room}');
         // 1. 确保我在 player1
-        if (room['player1']['accountId'] != GlobalData.userInfo['accountId']) {
+        if (room['player1']['accountId'] != accountId) {
           var temp = room['player1'];
           room['player1'] = room['player2'];
           room['player2'] = temp;
