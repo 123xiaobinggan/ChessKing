@@ -21,6 +21,7 @@ import '../bindings/game_record.dart';
 import '../bindings/game_replay.dart';
 import '../bindings/messages.dart';
 import '../bindings/chat_window.dart';
+import '../bindings/conversation.dart';
 
 import '../../pages/Version/version.dart';
 import '../../pages/Enter/Login/login.dart';
@@ -59,6 +60,7 @@ class AppRoutes {
   static final GameReplay = "/GameReplay";
   static final Messages = "/Messages";
   static final ChatWindow = "/ChatWindow";
+  static final Conversations = "/Conversations";
 }
 
 class AppPages {
@@ -154,5 +156,10 @@ class AppPages {
       page: () => ChatWindow(),
       binding: ChatWindowBindings(),
     ),
+    GetPage(
+      name: AppRoutes.Conversations,
+      page: () => Conversations(),
+      binding: ConversationsBindings(),
+    )
   ];
 }
